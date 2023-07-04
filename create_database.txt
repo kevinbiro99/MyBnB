@@ -1,0 +1,42 @@
+create database mybnb;
+use mybnb;
+
+create table Users (sin int(50) NOT NULL PRIMARY KEY, name varchar(100) NOT NULL, postalcode varchar(6) NOT NULL, city varchar(100) NOT NULL, country varchar(60) NOT NULL, dob DATE NOT NULL, occupation varchar(100), date_joining DATE DEFAULT (CURRENT_DATE), age INTEGER DEFAULT (TIMESTAMPDIFF(YEAR,dob,date_joining)) NOT NULL, CHECK (age >= 18)) ENGINE INNODB;
+
+delimiter | 
+CREATE TRIGGER userIns BEFORE INSERT ON Users
+FOR EACH ROW BEGIN
+DECLARE msg varchar(255);
+IF NEW.age < 18 THEN
+SET msg = 'Constraints violated!';
+SIGNAL sqlstate '45000' set message_text = msg;
+END IF;
+END 
+|
+delimiter ;
+
+INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','Smith','DEF456','Toronto','Canada','1999-02-23','Locksmith');
+
+INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','Smith','DEF456','Toronto','Canada','2008-02-23','Locksmith');
+
+
+*******************************************************************
+Importing from file:
+
+LOAD DATA INFILE "users.txt" INTO TABLE Users; 
+
+mysqlimport -u root -ppassword --local mybnb "C:\ProgramData\MySQL\MySQL Server 8.0\Uploads\users.txt" <-- works
+
+SHOW VARIABLES LIKE "secure_file_priv"; <-- where to put the files needed.
+
+set the global variables by using this command:
+mysql> SET GLOBAL local_infile=1;
+mysql> quit
+mysql --local-infile=1 -u root -p
+
+add loose-local-infile = 1 to my.ini in C:\ProgramData\MySQL\MySQL Server 8.0
+*******************************************************************
+
+
+select column_name from information_schema.columns where table_schema = 'mybnb' order by table_name,ordinal_position;
+	* shows all columns/attributes of a table
