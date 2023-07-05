@@ -49,8 +49,10 @@ public class MyBnB {
               System.out.println("User added to database");
             }
             catch (SQLException e) {
-              System.out.println("Error inserting user");
+              System.out.println("Error inserting user: " + e);
             }
+          case 2: // Delete User
+            
         }
         break;
       }
