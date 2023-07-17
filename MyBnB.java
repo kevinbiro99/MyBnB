@@ -86,7 +86,7 @@ public class MyBnB {
 			conn.close();
 			System.out.println("Success!");
 		} catch (SQLException e) {
-			System.err.println("Connection error occured!");
+			System.err.println("Connection error occured!" + e);
 		}
 	}
 
