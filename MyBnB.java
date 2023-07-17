@@ -17,7 +17,8 @@ public class MyBnB {
 		//Register JDBC driver
 		Class.forName(dbClassName);
 		//Database credentials
-		final String USER = "root";
+		final String USER = "sqluser"; // Laptop
+    // final String USER = "root"; // Desktop
 		final String PASS = "password";
 		System.out.println("Connecting to database...");
 		
