@@ -4,16 +4,67 @@ use mybnb;
 
 -- Need table declaration before trigger
 drop table if exists users;
-create table Users (sin INTEGER NOT NULL PRIMARY KEY, name varchar(100) NOT NULL, postalcode varchar(6) NOT NULL, city varchar(100) NOT NULL, country varchar(60) NOT NULL, dob DATE NOT NULL, occupation varchar(100), date_joining DATE DEFAULT (CURRENT_DATE), age INTEGER DEFAULT (TIMESTAMPDIFF(YEAR,dob,date_joining)) NOT NULL, CHECK (age >= 18)) ENGINE INNODB;
+create table Users (sin INTEGER NOT NULL PRIMARY KEY, name varchar(100) NOT NULL, postalcode varchar(10) NOT NULL, city varchar(100) NOT NULL, country varchar(60) NOT NULL, dob DATE NOT NULL, occupation varchar(100), date_joining DATE DEFAULT (CURRENT_DATE), age INTEGER DEFAULT (TIMESTAMPDIFF(YEAR,dob,date_joining)) NOT NULL, CHECK (age >= 18)) ENGINE INNODB;
 
 DROP TRIGGER IF EXISTS userIns;
 CREATE TRIGGER userIns BEFORE INSERT ON Users FOR EACH ROW BEGIN DECLARE msg VARCHAR(255); IF NEW.age < 18 THEN SET msg = 'Constraints violated!'; SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = msg; END IF; END;
 
 -- Need table declaration after trigger to fix constraint error
 drop table if exists users;
-create table Users (sin INTEGER NOT NULL PRIMARY KEY, name varchar(100) NOT NULL, postalcode varchar(6) NOT NULL, city varchar(100) NOT NULL, country varchar(60) NOT NULL, dob DATE NOT NULL, occupation varchar(100), date_joining DATE DEFAULT (CURRENT_DATE), age INTEGER DEFAULT (TIMESTAMPDIFF(YEAR,dob,date_joining)) NOT NULL, CHECK (age >= 18)) ENGINE INNODB;
+create table Users (sin INTEGER NOT NULL PRIMARY KEY, name varchar(100) NOT NULL, postalcode varchar(10) NOT NULL, city varchar(100) NOT NULL, country varchar(60) NOT NULL, dob DATE NOT NULL, occupation varchar(100), date_joining DATE DEFAULT (CURRENT_DATE), age INTEGER DEFAULT (TIMESTAMPDIFF(YEAR,dob,date_joining)) NOT NULL, CHECK (age >= 18)) ENGINE INNODB;
+
+drop table if exists Amenities;
+CREATE TABLE Amenities (amenity_name varchar(100) NOT NULL PRIMARY KEY);
+
+drop table if exists listings;
+CREATE TABLE Listings (listing_id INTEGER PRIMARY KEY AUTO_INCREMENT, type VARCHAR(255) NOT NULL, latitude DECIMAL(9, 6) NOT NULL, longitude DECIMAL(9, 6) NOT NULL, postal_code VARCHAR(255) NOT NULL, city VARCHAR(255) NOT NULL, country VARCHAR(255) NOT NULL);
+
+drop table if exists offering;
+CREATE TABLE Offerings (listing_id INT NOT NULL, amenity VARCHAR(255) NOT NULL, PRIMARY KEY (listing_id, amenity), FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (amenity) REFERENCES Amenities (amenity_name));
+
 
 
 -- Populate users table with data
-INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','John Smith','DEF456','Toronto','Canada','1989-02-23','Locksmith');
-INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('123456','John Smith Jr.','DEF456','Toronto','Canada','2004-02-23','Student');
+INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','John Smith','DEF 456','Toronto','Canada','1989-02-23','Locksmith');
+INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('123456','John Smith Jr.','DEF 456','Toronto','Canada','2004-02-23','Student');
+INSERT INTO Users (sin, name, postalcode, city, country, dob, occupation) VALUES (123456789, 'John Smith', 'M5V 2M4', 'Toronto', 'Canada', '1980-05-15', 'Engineer');
+INSERT INTO Users (sin, name, postalcode, city, country, dob, occupation) VALUES (987654321, 'Alice Johnson', 'M4Y 1Z3', 'Toronto', 'Canada', '1992-08-22', 'Teacher');
+INSERT INTO Users (sin, name, postalcode, city, country, dob, occupation) VALUES (246813579, 'David Lee', 'M5T 1G8', 'Toronto', 'Canada', '1975-12-10', 'Accountant');
+INSERT INTO Users (sin, name, postalcode, city, country, dob, occupation) VALUES (135792468, 'Emily Brown', 'M5B 1V8', 'Toronto', 'Canada', '1988-03-28', 'Marketing Manager');
+INSERT INTO Users (sin, name, postalcode, city, country, dob, occupation) VALUES (864209753, 'Sarah Wilson', 'M5V 3V9', 'Toronto', 'Canada', '1995-06-17', 'Student');
+
+
+-- Populate amenities table with amenities from airbnb:
+INSERT INTO Amenities (amenity_name) VALUES ('Wifi');
+INSERT INTO Amenities (amenity_name) VALUES ('Kitchen');
+INSERT INTO Amenities (amenity_name) VALUES ('Washer');
+INSERT INTO Amenities (amenity_name) VALUES ('Dryer');
+INSERT INTO Amenities (amenity_name) VALUES ('Air conditioning');
+INSERT INTO Amenities (amenity_name) VALUES ('Heating');
+INSERT INTO Amenities (amenity_name) VALUES ('Dedicated workspace');
+INSERT INTO Amenities (amenity_name) VALUES ('TV');
+INSERT INTO Amenities (amenity_name) VALUES ('Hair dryer');
+INSERT INTO Amenities (amenity_name) VALUES ('Iron');
+INSERT INTO Amenities (amenity_name) VALUES ('Pool');
+INSERT INTO Amenities (amenity_name) VALUES ('Hot tub');
+INSERT INTO Amenities (amenity_name) VALUES ('Free parking');
+INSERT INTO Amenities (amenity_name) VALUES ('EV charger');
+INSERT INTO Amenities (amenity_name) VALUES ('Crib');
+INSERT INTO Amenities (amenity_name) VALUES ('Gym');
+INSERT INTO Amenities (amenity_name) VALUES ('BBQ grill');
+INSERT INTO Amenities (amenity_name) VALUES ('Breakfast');
+INSERT INTO Amenities (amenity_name) VALUES ('Indoor fireplace');
+INSERT INTO Amenities (amenity_name) VALUES ('Smoking allowed');
+INSERT INTO Amenities (amenity_name) VALUES ('Beachfront');
+INSERT INTO Amenities (amenity_name) VALUES ('Waterfront');
+INSERT INTO Amenities (amenity_name) VALUES ('Ski-in/ski-out');
+INSERT INTO Amenities (amenity_name) VALUES ('Smoke alarm');
+INSERT INTO Amenities (amenity_name) VALUES ('Carbon monoxide alarm');
+
+
+-- Populate listings
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('House', 43.651070, -79.347015, 'M5V 2M4', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.655485, -79.383598, 'M4Y 1Z3', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 43.665318, -79.396555, 'M5T 1G8', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 43.660919, -79.385694, 'M5B 1V8', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.649988, -79.372685, 'M5V 3V9', 'Toronto', 'Canada');

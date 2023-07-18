@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 
 /**
  * Handles interaction with the SQL database. Contains the connection and queries that
@@ -12,8 +13,8 @@ public class SqlDAO {
 	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
-    final String USER = "sqluser"; // Laptop
-    // final String USER = "root"; // Desktop
+    // final String USER = "sqluser"; // Laptop
+    final String USER = "root"; // Desktop
     final String PASS = "password";
     
     // SQL connection session
@@ -73,7 +74,7 @@ public class SqlDAO {
             if (line.endsWith(";")) {
                 String query = queryBuilder.toString();
                 stmt.executeUpdate(query);
-                //System.out.println("Executed query: " + query);
+                System.out.println("Executed query: " + query);
                 queryBuilder.setLength(0); // Reset query builder
             }
         }
@@ -105,5 +106,58 @@ public class SqlDAO {
     public ResultSet getUsers() throws SQLException {
         String query = "select * from users";
         return stmt.executeQuery(query);
+    }
+
+    /*
+     * Takes in a list of amenities, listing info, list of days available (stored as ranges for more efficieny)
+     */
+    public void insertListing (String type, double lat, double lon, String postalcode, String city, 
+                            String country, ArrayList<String> amenities, ArrayList<DateCost> availabilityList) throws SQLException {
+        // insert into listing table
+        String query = "INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES (\'%s\',\'%.6f\',\'%.6f\',\'%s\',\'%s\',\'%s\');";
+        query = String.format(query, type, lat, lon, postalcode, city, country);
+        System.out.println(query);
+        int affectedRows = stmt.executeUpdate(query);
+
+        // Retrieve the listing id
+        int listingId = 0;
+        if (affectedRows > 0) {
+            // Retrieve the generated keys
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            
+            if (generatedKeys.next()) {
+                listingId = generatedKeys.getInt(1);
+                System.out.println("The listing_id of the most recently inserted listing is: " + listingId);
+            }
+        }
+
+        // insert into offers table (for amenities)
+        for (String amenity : amenities) {
+            insertOffering(amenity, listingId);
+        }
+
+        // insert into availability table
+    }
+
+    public boolean checkAmenityExists(String amenity) throws SQLException {
+        boolean exists = false;
+        String query = "SELECT amenity_name FROM Amenities WHERE amenity_name = \'%s\'";
+        query = String.format(query, amenity);
+        
+        ResultSet resultSet = stmt.executeQuery(query);
+            
+        if (resultSet.next()) {
+            exists = true;
+        }
+        
+        return exists;
+    }
+
+    public void insertOffering (String amenity, int listingId) throws SQLException {
+        String query = "INSERT INTO Offerings (listing_id, amenity) VALUES (\'%d\',\'%s\');";
+        query = String.format(query, listingId, amenity);
+        System.out.println(query);
+        stmt.executeUpdate(query);
+        System.out.println("Amenity: " + amenity + " added to database");
     }
 }
