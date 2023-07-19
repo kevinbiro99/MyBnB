@@ -3,6 +3,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Handles interaction with the SQL database. Contains the connection and queries that
@@ -111,13 +112,13 @@ public class SqlDAO {
     /*
      * Takes in a list of amenities, listing info, list of days available (stored as ranges for more efficieny)
      */
-    public void insertListing (String type, double lat, double lon, String postalcode, String city, 
-                            String country, ArrayList<String> amenities, ArrayList<DateCost> availabilityList) throws SQLException {
+    public int insertListing (int sin, String type, double lat, double lon, String postalcode, String city, 
+                            String country, HashSet<String> amenities, ArrayList<DateCost> availabilityList) throws SQLException {
         // insert into listing table
         String query = "INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES (\'%s\',\'%.6f\',\'%.6f\',\'%s\',\'%s\',\'%s\');";
         query = String.format(query, type, lat, lon, postalcode, city, country);
         System.out.println(query);
-        int affectedRows = stmt.executeUpdate(query);
+        int affectedRows = stmt.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
 
         // Retrieve the listing id
         int listingId = 0;
@@ -137,6 +138,14 @@ public class SqlDAO {
         }
 
         // insert into availability table
+        for (DateCost dc : availabilityList) {
+            insertAvailability(listingId, dc);
+        }
+
+        // insert into hosts table
+        insertHost(sin, listingId);
+
+        return listingId;
     }
 
     public boolean checkAmenityExists(String amenity) throws SQLException {
@@ -153,11 +162,46 @@ public class SqlDAO {
         return exists;
     }
 
+    public boolean checkUserExists(int sin) throws SQLException {
+        boolean exists = false;
+        String query = "SELECT sin FROM Users WHERE sin = \'%d\'";
+        query = String.format(query, sin);
+        
+        ResultSet resultSet = stmt.executeQuery(query);
+            
+        if (resultSet.next()) {
+            exists = true;
+        }
+        
+        return exists;
+    }
+
     public void insertOffering (String amenity, int listingId) throws SQLException {
         String query = "INSERT INTO Offerings (listing_id, amenity) VALUES (\'%d\',\'%s\');";
         query = String.format(query, listingId, amenity);
         System.out.println(query);
         stmt.executeUpdate(query);
         System.out.println("Amenity: " + amenity + " added to database");
+    }
+
+    public ResultSet getAmenities() throws SQLException {
+        String query = "select * from Amenities";
+        return stmt.executeQuery(query);
+    }
+
+    public void insertAvailability (int listingId, DateCost dc) throws SQLException {
+        String query = "INSERT INTO Availabilities (listing_id, date, cost) VALUES (\'%d\',\'%s\',\'%.2f\');";
+        query = String.format(query, listingId, dc.getDate(), dc.getCost());
+        System.out.println(query);
+        stmt.executeUpdate(query);
+        System.out.println("Availability for: " + listingId + " on date: " + dc.getDate() + " added to database");
+    }
+
+    public void insertHost (int sin, int listingId) throws SQLException {
+        String query = "INSERT INTO Hosts (listing_id, sin) VALUES (\'%d\',\'%d\');";
+        query = String.format(query, listingId, sin);
+        System.out.println(query);
+        stmt.executeUpdate(query);
+        System.out.println("Host for: " + listingId + " on with sin: " + sin + " added to database");
     }
 }

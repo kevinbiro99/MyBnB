@@ -40,7 +40,9 @@ public class MyBnB {
         case "user/show":
           User.showUsers();
           break;
-        case "listing":
+        case "listing/create":
+          Listing.createListing(scanner);
+          break;
         case "report":
         case "exit":
           return false;

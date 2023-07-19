@@ -20,8 +20,13 @@ drop table if exists listings;
 CREATE TABLE Listings (listing_id INTEGER PRIMARY KEY AUTO_INCREMENT, type VARCHAR(255) NOT NULL, latitude DECIMAL(9, 6) NOT NULL, longitude DECIMAL(9, 6) NOT NULL, postal_code VARCHAR(255) NOT NULL, city VARCHAR(255) NOT NULL, country VARCHAR(255) NOT NULL);
 
 drop table if exists offering;
-CREATE TABLE Offerings (listing_id INT NOT NULL, amenity VARCHAR(255) NOT NULL, PRIMARY KEY (listing_id, amenity), FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (amenity) REFERENCES Amenities (amenity_name));
+CREATE TABLE Offerings (listing_id INTEGER NOT NULL, amenity VARCHAR(255) NOT NULL, PRIMARY KEY (listing_id, amenity), FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (amenity) REFERENCES Amenities (amenity_name));
 
+drop table if exists availability;
+CREATE TABLE Availabilities (listing_id INTEGER NOT NULL, availability BOOLEAN NOT NULL DEFAULT 1, cost DECIMAL(10, 2) NOT NULL, date DATE NOT NULL, FOREIGN KEY (listing_id) REFERENCES Listings (listing_id));
+
+drop table if exists hosts;
+CREATE TABLE Hosts (sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, PRIMARY KEY (listing_id, sin));
 
 
 -- Populate users table with data
