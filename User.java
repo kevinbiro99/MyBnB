@@ -2,7 +2,10 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Scanner;
 
 /*
@@ -12,6 +15,9 @@ public class User {
     /*
      * Display all users
      */
+    private static String dobFormat = "yyyy-MM-dd";
+    private static int minAge = 18;
+
     public static void showUsers() throws ClassNotFoundException, SQLException {
         ResultSet rs = SqlDAO.getInstance().getUsers();
 
@@ -45,10 +51,18 @@ public class User {
      * Register a new user with valid parameters
      */
     public static void registerUser(Scanner scanner) throws ParseException, ClassNotFoundException, SQLException{
+        int sin;
         System.out.print("Enter your SIN: ");
-        int sin = scanner.nextInt();
+        sin = scanner.nextInt();
         scanner.nextLine();
         
+        while(SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("User with SIN already exists!");
+            System.out.print("Enter your SIN: ");
+            sin = scanner.nextInt();
+            scanner.nextLine();
+        };
+
         System.out.println();
         System.out.print("Enter your name: ");
         String name = scanner.nextLine();
@@ -69,18 +83,23 @@ public class User {
         String dob = "";
         while (!accepted) {
             accepted = true;
-            System.out.println();
-            System.out.print("Enter your date of birth (YYYY-MM-DD): ");
+            System.out.print("\nEnter your date of birth ("+dobFormat.toUpperCase()+"): ");
             dob = scanner.next();
             try {
-                new SimpleDateFormat("YYYY-MM-DD").parse(dob).toString();
+                LocalDate formatteddob = LocalDate.parse(dob, DateTimeFormatter.ofPattern(dobFormat));
+                if(Period.between(formatteddob, LocalDate.now()).getYears() < minAge){
+                    System.out.print("You must be older than "+minAge+" to register!");
+                    accepted = false;
+                }
             }
-            catch (ParseException e) {
+            catch (DateTimeParseException  e) {
                 System.out.println("Wrong date format! Correct format is: YYYY-MM-DD");
                 accepted = false;
             }
         }
         scanner.nextLine();
+
+        //Check age, if too young try again or kcik them out?
 
         System.out.println();
         System.out.print("Enter your occupation: ");

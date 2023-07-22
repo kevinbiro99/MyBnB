@@ -1,18 +1,17 @@
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.time.format.DateTimeParseException;
 
 public class Listing {
   public static ArrayList<String> listingTypes = new ArrayList<String>(Arrays.asList("house", "apartment", "guesthouse", "hotel"));
-
+  private static String dateFormat = "yyyy-MM-dd";
 
   /*
    * int sin, String type, double lat, double lon, String postalcode, String city, 
@@ -93,13 +92,14 @@ public class Listing {
       System.out.println();
       System.out.println("Enter cost per day: ");
       double cost = scanner.nextDouble();
+      LocalDate startDate = null, endDate = null;
       scanner.nextLine();
       try {
-        new SimpleDateFormat("YYYY-MM-DD").parse(start).toString();
-        new SimpleDateFormat("YYYY-MM-DD").parse(end).toString();
+        startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern(dateFormat));
+        endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern(dateFormat));
       }
-      catch (ParseException e) {
-        System.out.println("Wrong date format! Correct format is: YYYY-MM-DD");
+      catch (DateTimeParseException e) {
+        System.out.println("Wrong date format! Correct format is: "+dateFormat.toUpperCase());
         invalid = true;
       }
       
@@ -114,9 +114,7 @@ public class Listing {
 
       if (!invalid) {
         // Insert a date into the database for each date in the given start-end range
-        LocalDate startDate = LocalDate.parse(start);
-        LocalDate endDate = LocalDate.parse(end);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat);
 
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
