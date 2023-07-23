@@ -43,6 +43,12 @@ public class MyBnB {
         case "listing/create":
           Listing.createListing(scanner);
           break;
+        case "listing/search/dist":
+          Listing.showListingsNear(scanner);
+          break;
+        case "listing/search/price":
+          
+          break;
         case "report":
         case "exit":
           return false;
