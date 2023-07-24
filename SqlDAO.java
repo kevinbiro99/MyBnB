@@ -105,7 +105,7 @@ public class SqlDAO {
     }
 
     public ResultSet getUsers() throws SQLException {
-        String query = "select * from users";
+        String query = "select * from Users";
         return stmt.executeQuery(query);
     }
 
@@ -203,5 +203,10 @@ public class SqlDAO {
         System.out.println(query);
         stmt.executeUpdate(query);
         System.out.println("Host for: " + listingId + " on with sin: " + sin + " added to database");
+    }
+
+    public ResultSet getListings() throws SQLException {
+        String query = "select * from listings";
+        return stmt.executeQuery(query);
     }
 }

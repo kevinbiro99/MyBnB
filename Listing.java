@@ -1,18 +1,23 @@
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
+import java.time.format.DateTimeParseException;
 
 public class Listing {
   public static ArrayList<String> listingTypes = new ArrayList<String>(Arrays.asList("house", "apartment", "guesthouse", "hotel"));
-
+  private static double defaultDistance = 10;
+  
+  //TODO: Should change how available dates are stored, takes too much space
 
   /*
    * int sin, String type, double lat, double lon, String postalcode, String city, 
@@ -91,15 +96,16 @@ public class Listing {
       String end = scanner.next();
 
       System.out.println();
-      System.out.println("Enter cost per day: ");
+      System.out.print("Enter cost per day: ");
       double cost = scanner.nextDouble();
+      LocalDate startDate = null, endDate = null;
       scanner.nextLine();
       try {
-        new SimpleDateFormat("YYYY-MM-DD").parse(start).toString();
-        new SimpleDateFormat("YYYY-MM-DD").parse(end).toString();
+        startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
       }
-      catch (ParseException e) {
-        System.out.println("Wrong date format! Correct format is: YYYY-MM-DD");
+      catch (DateTimeParseException e) {
+        System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
         invalid = true;
       }
       
@@ -114,8 +120,6 @@ public class Listing {
 
       if (!invalid) {
         // Insert a date into the database for each date in the given start-end range
-        LocalDate startDate = LocalDate.parse(start);
-        LocalDate endDate = LocalDate.parse(end);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         LocalDate currentDate = startDate;
@@ -128,7 +132,7 @@ public class Listing {
         numInserted += 1;
 
         // Give chance to stop inserting:
-        System.out.println("Do you want to continue entering dates? (c) or Quit? (q): ");
+        System.out.println("Do you want to continue entering dates? (c) or quit? (q): ");
         String choice = scanner.nextLine();
         while (!(choice.equals("c") || choice.equals("q"))) {
           System.out.println("Please enter a valid choice (c/q): ");
@@ -160,6 +164,7 @@ public class Listing {
         System.out.println();
       }
     }
+    System.out.println();
     rs.close();
   }
 
@@ -169,5 +174,100 @@ public class Listing {
     LocalDate endDate = LocalDate.parse(endDateString);
 
     return date.isEqual(startDate) || date.isEqual(endDate) || (date.isAfter(startDate) && date.isBefore(endDate));
+  }
+
+  public static ArrayList<ListingDist> getListingSet() throws ClassNotFoundException, SQLException{
+    ResultSet rs = SqlDAO.getInstance().getListings();
+    ArrayList<ListingDist> listings = new ArrayList<ListingDist>();
+    while(rs.next()){
+      ListingDist listing = new ListingDist(rs.getString("type"), 
+                                    rs.getDouble("latitude"),
+                                    rs.getDouble("longitude"),
+                                    rs.getString("postal_code"),
+                                    rs.getString("city"),
+                                    rs.getString("country"),
+                                    0);
+      listings.add(listing);
+    }
+    return listings;
+  }
+
+  /*
+   * Given a location and distance by user using scanner, prints all listing within the distance
+   */
+  public static void showListingsNear(Scanner scanner) throws ClassNotFoundException, SQLException{
+    System.out.print("Enter the latitude: ");
+    double lat = scanner.nextDouble();
+    scanner.nextLine();
+
+    System.out.println();
+    System.out.print("Enter the longitude: ");
+    double lon = scanner.nextDouble();
+    scanner.nextLine();
+
+    System.out.println();
+    System.out.print("Use default distaince("+defaultDistance+"km)? Y/N: ");
+    String input = scanner.nextLine();
+    double distance = defaultDistance;
+
+    if(input.toLowerCase().equals("n")){
+      System.out.println();
+      System.out.print("Enter the distance(km): ");
+      distance = scanner.nextDouble();
+      scanner.nextLine();
+    }
+
+    ArrayList<ListingDist> listings = getListingSet();
+    listings = filterByDist(listings, lat, lon, distance);
+
+    Collections.sort(listings, new Comparator<ListingDist>() {
+      @Override
+      public int compare(ListingDist l1, ListingDist l2){
+        if(l1.getDist() > l2.getDist()) return 1;
+        if(l1.getDist() == l2.getDist()) return 0;
+        return -1;
+      }
+    });
+
+    printListingSet(listings);
+  }
+
+  public static ArrayList<ListingDist> filterByDist(ArrayList<ListingDist> listings, 
+                                                    double lat, double lon, double dist){
+    ArrayList<ListingDist> filtered = new ArrayList<ListingDist>();
+
+    for(ListingDist listing : listings){
+      double d = distanceBetween(lat, lon, listing.getLat(), listing.getLon());
+      if(d <= dist){
+        listing.setDist(d);
+        filtered.add(listing);
+      }
+    }
+    
+    return filtered;
+  }
+
+  /*
+   * Returns the distance in km between lat1, lon1 and lat2, lon2 using the Haversine formula
+   */
+  public static double distanceBetween(double lat1, double lon1, double lat2, double lon2){
+    double rlat1 = Math.toRadians(lat1);
+    double rlat2 = Math.toRadians(lat2);
+    double radius = 6371;
+
+    double dlat = rlat2 - rlat1;
+    double dlon = Math.toRadians(lon2 - lon1);
+
+    double a = 
+      Math.sin(dlat/2) * Math.sin(dlat/2) + Math.cos(rlat1) * Math.cos(rlat2) * 
+      Math.sin(dlon/2) * Math.sin(dlon/2);
+    double c = Math.asin(Math.sqrt(a));
+    return 2 * c * radius;
+  }
+
+  public static void printListingSet(ArrayList<ListingDist> listings){
+    for (ListingDist listing : listings){
+      System.out.println(listing.toString());
+    }
   }
 }
