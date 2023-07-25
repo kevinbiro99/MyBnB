@@ -2,16 +2,21 @@ import java.sql.Date;
 
 public class DateCost {
   
-  private Date date;
+  private Date start, end;
   private double cost;
 
-  public DateCost(Date date, double cost) {
-    this.date = date;
+  public DateCost(Date start, Date end, double cost) {
+    this.start = start;
+    this.end = end;
     this.cost = cost;
   }
 
-  public Date getDate() {
-    return date;
+  public Date getStartDate() {
+    return start;
+  }
+
+  public Date getEndDate() {
+    return end;
   }
 
   public double getCost() {

@@ -14,8 +14,8 @@ public class SqlDAO {
 	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
-    // final String USER = "sqluser"; // Laptop
-    final String USER = "root"; // Desktop
+    final String USER = "sqluser"; // Laptop
+    // final String USER = "root"; // Desktop
     final String PASS = "password";
     
     // SQL connection session
@@ -190,11 +190,11 @@ public class SqlDAO {
     }
 
     public void insertAvailability (int listingId, DateCost dc) throws SQLException {
-        String query = "INSERT INTO Availabilities (listing_id, date, cost) VALUES (\'%d\',\'%s\',\'%.2f\');";
-        query = String.format(query, listingId, dc.getDate(), dc.getCost());
+        String query = "INSERT INTO Availabilities (listing_id, start, end, cost) VALUES (\'%d\',\'%s\', \'%s\',\'%.2f\');";
+        query = String.format(query, listingId, dc.getStartDate(), dc.getEndDate(), dc.getCost());
         System.out.println(query);
         stmt.executeUpdate(query);
-        System.out.println("Availability for: " + listingId + " on date: " + dc.getDate() + " added to database");
+        System.out.println("Availability for: " + listingId + " on range: " + dc.getStartDate() + " - " + dc.getEndDate() + " added to database");
     }
 
     public void insertHost (int sin, int listingId) throws SQLException {
@@ -209,4 +209,29 @@ public class SqlDAO {
         String query = "select * from listings";
         return stmt.executeQuery(query);
     }
+
+    public ResultSet getListingsFromUser(int sin) throws SQLException {
+        String query = "select * from hosts natural join listings where sin = \'%d\'";
+        query = String.format(query, sin);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getAvailabilitiesFromListing(int listing_id) throws SQLException {
+        String query = "select * from availabilities where listing_id = \'%d\'";
+        query = String.format(query, listing_id);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getRangeOverlapFromDate(int listing_id, String start, String end) throws SQLException {
+        String query = "SELECT * FROM availabilities WHERE listing_id = \'%d\' AND (start BETWEEN \'%s\' AND \'%s\' OR end BETWEEN \'%s\' AND \'%s\' OR start <= \'%s\' AND end >= \'%s\')";
+        query = String.format(query, listing_id, start, end, start, end, start, end);
+        return stmt.executeQuery(query);
+    }
+
+    public void deleteRangeOverlapFromDate(int listing_id, String start, String end) throws SQLException {
+        String query = "DELETE FROM availabilities WHERE listing_id = \'%d\' AND (start BETWEEN \'%s\' AND \'%s\' OR end BETWEEN \'%s\' AND \'%s\' OR start <= \'%s\' AND end >= \'%s\')";
+        query = String.format(query, listing_id, start, end, start, end, start, end);
+        stmt.executeUpdate(query);
+    }
+
 }
