@@ -14,8 +14,8 @@ public class SqlDAO {
 	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
-    final String USER = "sqluser"; // Laptop
-    // final String USER = "root"; // Desktop
+    //final String USER = "sqluser"; // Laptop
+    final String USER = "root"; // Desktop
     final String PASS = "password";
     
     // SQL connection session

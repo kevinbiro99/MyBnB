@@ -19,7 +19,7 @@ public class MyBnB {
 
     scanner = new Scanner(System.in);  // Create a Scanner object
     functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show",
-              "user/review", "listing/search", "listing/search/dist", "listing/book", "listing/cancel", "listing/create", "listing/remove", "listing/update",
+              "user/review", "listing/search", "listing/book", "listing/cancel", "listing/create", "listing/remove", "listing/update",
               "listing/review", "reports", "exit"));
     
     while(handle(selectFunction()));
@@ -46,11 +46,8 @@ public class MyBnB {
         case "listing/update":
           Listing.updateListing(scanner);
           break;
-        case "listing/search/dist":
-          Listing.showListingsNear(scanner);
-          break;
-        case "listing/search/price":
-          
+        case "listing/search":
+          Listing.listingSearch(scanner);
           break;
         case "report":
         case "exit":
