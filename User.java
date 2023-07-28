@@ -39,7 +39,36 @@ public class User {
         rs.close();
     }
 
-    // Deletes the user and all associated data (listings, bookings, reviews)
+    public static void showUserBookings(Scanner scanner) throws ClassNotFoundException, SQLException {
+        System.out.println("Enter your SIN: ");
+        int sin = scanner.nextInt();
+        scanner.nextLine();
+        if (!SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("INVALID USER SIN");
+            return;
+        }
+        
+        ResultSet rs = SqlDAO.getInstance().getBookings(sin);
+
+        System.out.println("Bookings: ");
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int listing_id  = rs.getInt("listing_id");
+            Date start = rs.getDate("start");
+            Date end = rs.getDate("end");
+            int card = rs.getInt("card");
+        
+            //Display values
+            System.out.print("(listing_id: " + listing_id);
+            System.out.print(", start: " + start);
+            System.out.print(", end: " + end);
+            System.out.println(", card: " + card + ")");
+        }
+
+        rs.close();
+    }
+
     public static void deleteUser(Scanner scanner) throws ClassNotFoundException, SQLException {
         System.out.println("Enter the SIN of the user you want to delete: ");
         int sin = scanner.nextInt();

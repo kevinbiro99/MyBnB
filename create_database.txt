@@ -28,6 +28,8 @@ CREATE TABLE Availabilities (listing_id INTEGER NOT NULL, availability BOOLEAN N
 drop table if exists hosts;
 CREATE TABLE Hosts (sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, PRIMARY KEY (listing_id, sin), FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (sin) REFERENCES Users (sin));
 
+drop table if exists bookings;
+CREATE TABLE Bookings (booking_id INTEGER PRIMARY KEY AUTO_INCREMENT, sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, start DATE NOT NULL, end DATE NOT NULL, card INTEGER NOT NULL, FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (sin) REFERENCES Users (sin));
 
 -- Populate users table with data
 INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','John Smith','DEF 456','Toronto','Canada','1989-02-23','Locksmith');

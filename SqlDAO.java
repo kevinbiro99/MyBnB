@@ -14,8 +14,8 @@ public class SqlDAO {
 	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
-    final String USER = "sqluser"; // Laptop
-    // final String USER = "root"; // Desktop
+    // final String USER = "sqluser"; // Laptop
+    final String USER = "root"; // Desktop
     final String PASS = "password";
     
     // SQL connection session
@@ -217,7 +217,7 @@ public class SqlDAO {
     }
 
     public ResultSet getAvailabilitiesFromListing(int listing_id) throws SQLException {
-        String query = "select * from availabilities where listing_id = \'%d\'";
+        String query = "select * from availabilities where listing_id = \'%d\' order by start";
         query = String.format(query, listing_id);
         return stmt.executeQuery(query);
     }
@@ -232,6 +232,26 @@ public class SqlDAO {
         String query = "DELETE FROM availabilities WHERE listing_id = \'%d\' AND (start BETWEEN \'%s\' AND \'%s\' OR end BETWEEN \'%s\' AND \'%s\' OR start <= \'%s\' AND end >= \'%s\')";
         query = String.format(query, listing_id, start, end, start, end, start, end);
         stmt.executeUpdate(query);
+    }
+
+    public void updateAvailability(int listing_id, String start, String end, int availability) throws SQLException {
+        String query = "UPDATE availabilities SET availability = \'%d\' WHERE listing_id = \'%d\' AND start = \'%s\' AND end = \'%s\'";
+        query = String.format(query, availability, listing_id, start, end);
+        stmt.executeUpdate(query);
+    }
+
+    public void bookListing(int listing_id, int sin, String start, String end, int card) throws SQLException {
+        String query = "INSERT INTO Bookings (listing_id, sin, start, end, card) VALUES (\'%d\',\'%d\', \'%s\', \'%s\', \'%d\');";
+        query = String.format(query, listing_id, sin, start, end, card);
+        System.out.println(query);
+        stmt.executeUpdate(query);
+        System.out.println("Booking for: " + listing_id + " by user with sin: " + sin + " added to database");
+    }
+
+    public ResultSet getBookings(int sin) throws SQLException {
+        String query = "select * from bookings where sin = \'%d\'";
+        query = String.format(query, sin);
+        return stmt.executeQuery(query);
     }
 
 }

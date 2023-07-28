@@ -427,20 +427,32 @@ public class Listing {
     return listingIds;
   }
 
-  public static void displayListingAvailabilities(int listing_id) throws ClassNotFoundException, SQLException {
+  /*
+   * Returns a list of available indices
+   */
+  public static ArrayList<ArrayList<String>> displayListingAvailabilities(int listing_id) throws ClassNotFoundException, SQLException {
     System.out.println();
     ResultSet rs = SqlDAO.getInstance().getAvailabilitiesFromListing(listing_id);
     System.out.println("Availabilities for listing_id " + listing_id + ": ");
     int index = 0;
+    ArrayList<ArrayList<String>> availabilities = new ArrayList<ArrayList<String>>();
     // Extract data from result set
     while(rs.next()){
       //Retrieve by column name
+      ArrayList<String> a = new ArrayList<String>();
       String start = rs.getString("start");
       String end = rs.getString("end");
       double cost = rs.getDouble("cost");
       boolean available = rs.getBoolean("availability");
+      a.add(""+index);
+      a.add(start);
+      a.add(end);
+      // Array list maintains insertion order so we will use this to retrieve index
+      if(available) {
+        availabilities.add(a);
+      }
       //Display values
-      System.out.format("(%-50s", start + ", " + end + ", $" + cost + ", Booked: " + !available + ")");
+      System.out.format(index + ": (%-50s", start + ", " + end + ", $" + cost + ", Booked: " + !available + ")");
       index ++;
       if (index % 3 == 0) {
         System.out.println();
@@ -448,6 +460,110 @@ public class Listing {
     }
     rs.close();
     System.out.println();
+    return availabilities;
+  }
+
+  public static void bookListing(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.println("Enter your SIN: ");
+    int sin = scanner.nextInt();
+    scanner.nextLine();
+    if (!SqlDAO.getInstance().checkUserExists(sin)){
+      System.out.println("INVALID USER SIN");
+      return;
+    }
+
+    // collect payment info (credit card number)
+    System.out.println("Enter your credit card number: ");
+    int card = scanner.nextInt();
+    scanner.nextLine();
+
+    ArrayList<Integer> listings = displayAllListings();
+
+    if (listings.isEmpty()) {
+      System.out.println("There are no listings available");
+      return;
+    }
+    
+    // User selects listing they want to book by id
+    System.out.println("Select the listing to book (by id): ");
+    int listing = scanner.nextInt();
+    scanner.nextLine();
+    if (!listings.contains(listing)) {
+        System.out.println("This listing id: " + listing + " does not exist");
+        return;
+    }
+
+    // User enters availability indices they want to book
+    boolean done = false;
+    while (!done) {
+      ArrayList<ArrayList<String>> availabilities = displayListingAvailabilities(listing);
+      ArrayList<String> availability = new ArrayList<String>();
+      boolean invalid = true;
+
+      System.out.println();
+      System.out.print("Enter an availability index: ");
+      int idx = scanner.nextInt();
+      scanner.nextLine();
+      
+      for(ArrayList<String> a : availabilities) {
+        if (a.get(0).equals(""+idx)) {
+          invalid = false;
+          availability = a;
+        }
+      }
+
+      if (invalid) {
+        System.out.println("Availability index is not available or does not exist");
+      }
+
+      if (!invalid) {
+        // Change the availability to false
+        SqlDAO.getInstance().updateAvailability(listing, availability.get(1), availability.get(2), 0);
+
+        // Save booking
+        SqlDAO.getInstance().bookListing(listing, sin, availability.get(1), availability.get(2), card);
+        
+        // Give chance to stop booking:
+        System.out.println("Do you want to continue booking dates? (c) or quit? (q): ");
+        String choice = scanner.nextLine();
+        while (!(choice.equals("c") || choice.equals("q"))) {
+          System.out.println("Please enter a valid choice (c/q): ");
+          choice = scanner.nextLine();
+        }
+        if (choice.equals("q")) {
+          done = true;
+        } else {
+          System.out.println("Continue entering indices...");
+        }
+      }
+    }
+  }
+
+  public static ArrayList<Integer> displayAllListings() throws ClassNotFoundException, SQLException {
+    System.out.println();
+    ResultSet rs = SqlDAO.getInstance().getListings();
+    System.out.println("Listings: ");
+    int index = 0;
+    ArrayList<Integer> listingIds = new ArrayList<Integer>();
+    // Extract data from result set
+    while(rs.next()){
+      //Retrieve by column name
+      int listing = rs.getInt("listing_id");
+      String type = rs.getString("type");
+      String city = rs.getString("city");
+      String country = rs.getString("country");
+      listingIds.add(listing);
+      //Display values
+      System.out.format("(id: %s, type: %s, city: %s, country: %s) %-5s", listing, type, city, country, "");
+      index ++;
+      if (index % 2 == 0) {
+        System.out.println();
+      }
+    }
+    rs.close();
+    System.out.println();
+    System.out.println();
+    return listingIds;
   }
 
 }
