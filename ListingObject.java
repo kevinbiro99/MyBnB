@@ -1,9 +1,9 @@
-public class ListingDist {
+public class ListingObject {
     private int id;
     private double dist, lat, lon, cost;
-    private String type, pos, city, country;
+    private String type, pos, city, country, startDate, endDate;
     
-    public ListingDist(int id, double dist, double lat, double lon, double cost, String type, String pos, String city,
+    public ListingObject(int id, double dist, double lat, double lon, double cost, String type, String pos, String city,
             String country) {
         this.id = id;
         this.dist = dist;
@@ -18,11 +18,11 @@ public class ListingDist {
 
     @Override
     public String toString() {
-        String distString = "" + Math.round(dist * 10.0)/10.0;
-        String costString = "" + cost;
+        String distString = Math.round(dist * 10.0)/10.0+"km";
+        String costString = "$" + cost;
         if(cost < 0) costString = "Unknown";
         if(dist < 0) distString = "Unknown";
-        return String.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s", distString, costString, type, city, pos, country, lat, lon);
+        return String.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s", distString, costString, startDate, endDate, type, city, pos, country, lat, lon);
         // return "[dist=" + distString + ", lat=" + lat + ", lon=" + lon + ", cost=" + cost + ", type=" + type
         //         + ", pos=" + pos + ", city=" + city + ", country=" + country + ", id=" + id + "]";
     }
@@ -74,4 +74,22 @@ public class ListingDist {
     public void setCost(double cost) {
         this.cost = cost;
     }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    
 }

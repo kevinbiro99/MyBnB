@@ -191,11 +191,11 @@ public class Listing {
     return startDate.equals(endDate) || startDate.isBefore(endDate);
   }
 
-  public static ArrayList<ListingDist> getListingSet() throws ClassNotFoundException, SQLException {
+  public static ArrayList<ListingObject> getListingSet() throws ClassNotFoundException, SQLException {
     ResultSet rs = SqlDAO.getInstance().getListings();
-    ArrayList<ListingDist> listings = new ArrayList<ListingDist>();
+    ArrayList<ListingObject> listings = new ArrayList<ListingObject>();
     while (rs.next()) {
-      ListingDist listing = new ListingDist(rs.getInt("listing_id"),
+      ListingObject listing = new ListingObject(rs.getInt("listing_id"),
           -1.0,
           rs.getDouble("latitude"),
           rs.getDouble("longitude"),
@@ -209,117 +209,272 @@ public class Listing {
     return listings;
   }
 
-  public static void printListingSet(ArrayList<ListingDist> listings) {
-    System.out.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s\n",
-        "Distance", "Cost", "Type", "City", "Postal code", "Country", "Latitude", "Longitude");
-    for (ListingDist listing : listings) {
+  public static void printListingSet(ArrayList<ListingObject> listings) {
+    System.out.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s\n",
+        "Distance", "Cost", "Start", "End", "Type", "City", "Postal code", "Country", "Latitude", "Longitude");
+    for (ListingObject listing : listings) {
       System.out.println(listing.toString());
     }
   }
 
   public static void listingSearch(Scanner scanner) throws ClassNotFoundException, SQLException {
     String input = "";
-    int option = -1;
-    String[] filterKeys = { "d", "p" };
-    String[] desc = { "distance", "postal code" };
-    String[] sortKeys = {"1","2","3","4"};
-    String[] sortDesc = { "ascending distance", "descending distance", "ascending cost", "descending cost" };
-    //Filters can stack, sorting methods cannot
-    //Filter: by type, by city, by country, by price range, by amenities, by window of availability, by address
-    //Sort: distance, price
-    ArrayList<ListingDist> listings = getListingSet();
+
+    ArrayList<InputKey> filters = new ArrayList<InputKey>();
+    filters.add(new InputKey("d", "distance"));
+    filters.add(new InputKey("p", "postal code"));
+    filters.add(new InputKey("t", "type"));
+    filters.add(new InputKey("c", "city"));
+    filters.add(new InputKey("co", "country"));
+    filters.add(new InputKey("w", "window of availability"));
+    filters.add(new InputKey("pr", "price range"));
+
+    ArrayList<InputKey> sortings = new ArrayList<InputKey>();
+    sortings.add(new InputKey("1", "ascending distance"));
+    sortings.add(new InputKey("2", "descending distance"));
+    sortings.add(new InputKey("3", "ascending cost"));
+    sortings.add(new InputKey("4", "descending cost"));
+
+    // Filters can stack, sorting methods cannot
+    // Filter: by price range, by amenities, by window of availability, by exact
+    // address [c,a,w,e]
+    // Sort: distance, price
+    ArrayList<ListingObject> listings = getListingSet();
+    getNextAvailableCost(listings);
 
     while (!input.equals("q")) {
-      System.out.println("How would you like to search?");
-      for (int i = 0; i < filterKeys.length; i++) {
-        System.out.println("[" + filterKeys[i] + "] to search by " + desc[i]);
+      System.out.println("You have the following filters active:");
+      String msg = "  ";
+      for (InputKey filter : filters) {
+        if (filter.isPressed())
+          msg = msg + filter.getDescription() + ", ";
+      }
+      System.out.println(msg.substring(0, msg.length() - 2));
+
+      System.out.println("Press the button to select/deselect filters, [q] to continue:");
+      for (InputKey filter : filters) {
+        System.out.println("[" + filter.getKey() + "] to search by " + filter.getDescription());
       }
       input = scanner.nextLine();
-      if (input.length() == 1) {
-        for (int i = 0; i < filterKeys.length; i++) {
-          if (input.toLowerCase().equals(filterKeys[i])){
-            option = i;
-            input = "q";
-          }
+      for (InputKey filter : filters) {
+        if (input.toLowerCase().equals(filter.getKey() + "")) {
+          filter.setPressed(!filter.isPressed());
         }
       }
       System.out.println();
     }
 
-    getCostOfDate(listings, Date.valueOf(LocalDate.now(ZoneId.of("America/Toronto"))));
-    if (option == 0) {
-      getDistance(scanner, listings);
-      listings = filterByDist(scanner, listings);
-    }else if(option == 1) {
-      listings = filterByPostal(scanner, listings);
+    for (InputKey filter : filters) {
+      if (filter.isPressed()) {
+        switch (filter.getDescription()) {
+          case "distance":
+            getDistance(scanner, listings);
+            listings = filterByDist(scanner, listings);
+            break;
+          case "postal code":
+            listings = filterByPostal(scanner, listings);
+            break;
+          case "type":
+            listings = filterByType(scanner, listings);
+            break;
+          case "city":
+            listings = filterByCity(scanner, listings);
+            break;
+          case "country":
+            listings = filterByCountry(scanner, listings);
+            break;
+          case "window of availability":
+            listings = filterByAvailability(scanner, listings);
+            break;
+          case "price range":
+            listings = filterByPriceRange(scanner, listings);
+            break;
+          default:
+            System.out.println("Invalid operation");
+        }
+        System.out.println();
+      }
     }
-    printListingSet(listings);
+    System.out.println();
+    if (listings.size() == 0) {
+      System.out.println("No results were found.");
+      return;
+    } else {
+      printListingSet(listings);
+    }
     System.out.println();
 
     input = "";
+    String sortingDesc = "";
     while (!input.equals("q")) {
-      System.out.println("How would you like to sort?");
-      for (int i = 0; i < sortKeys.length; i++) {
-        System.out.println("[" + sortKeys[i] + "] to sort by " + sortDesc[i]);
+      System.out.println("How would you like to sort? [q] to quit: ");
+      for (InputKey sorting : sortings) {
+        System.out.println("[" + sorting.getKey() + "] to sort by " + sorting.getDescription());
       }
       input = scanner.nextLine();
-      if (input.length() == 1) {
-        for (int i = 0; i < sortKeys.length; i++) {
-          if (input.toLowerCase().equals(sortKeys[i])){
-            option = i;
-          }
-        }
+      for (InputKey sorting : sortings) {
+        if (input.toLowerCase().equals(sorting.getKey() + ""))
+          sortingDesc = sorting.getDescription();
+      }
+
+      switch (sortingDesc) {
+        case "ascending distance":
+          sortByDistLow(listings);
+          break;
+        case "descending distance":
+          sortByDistHigh(listings);
+          break;
+        case "ascending cost":
+          sortByCostLow(listings);
+          break;
+        case "descending cost":
+          sortByCostHigh(listings);
+          break;
+        default:
+          System.out.println();
+          System.out.println("Invalid operation");
       }
       System.out.println();
+      printListingSet(listings);
+      System.out.println();
+    }
+  }
+
+  public static ArrayList<ListingObject> filterByAvailability(Scanner scanner, ArrayList<ListingObject> listings) throws ClassNotFoundException, SQLException{
+    LocalDate startDate, endDate;
+    while (true) {
+      System.out.print("Enter the start date of the range (YYYY-MM-DD): ");
+      String start = scanner.next();
+      scanner.nextLine();
+
+      System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
+      String end = scanner.next();
+      scanner.nextLine();
+      
+      try {
+        startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        break;
+      } catch (DateTimeParseException e) {
+        System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
+      }
     }
 
-    switch(option){
-      case 0:
-        sortByDistLow(listings);
-        break;
-      case 1:
-        sortByDistHigh(listings);
-        break;
-      case 2:
-        sortByCostLow(listings);
-        break;
-      case 3:
-        sortByDistHigh(listings);
-        break;
+    getAvailabilitiesByRange(listings, startDate.toString(), endDate.toString());
+
+    // If there exists a period that encloses the given dates, update price and date
+    // to enclosing date other wise change cost to -1
+    ArrayList<ListingObject> filtered = new ArrayList<>();
+    for (ListingObject listing : listings) {
+      if (!listing.getStartDate().equalsIgnoreCase("Null"))
+        filtered.add(listing);
     }
-    printListingSet(listings);
+    return filtered;
+  }
+
+  public static void getAvailabilitiesByRange(ArrayList<ListingObject> listings, String start, String end) throws ClassNotFoundException, SQLException{
+    SqlDAO dao = SqlDAO.getInstance();
+    ResultSet rs;
+    String startDate, endDate;
+    double cost;
+
+    for (ListingObject listing : listings) {
+      rs = dao.getRangeContainsDate(listing.getId(), start, end);
+      startDate = "Null";
+      endDate = "Null";
+      cost = -1;
+      if(rs.next()){
+        startDate = rs.getString("start");
+        endDate = rs.getString("end");
+        cost = rs.getDouble("cost");
+      }
+      listing.setCost(cost);
+      listing.setStartDate(startDate);
+      listing.setEndDate(endDate);
+    }
+  }
+
+  public static ArrayList<ListingObject> filterByPriceRange(Scanner scanner, ArrayList<ListingObject> listings) {
+    System.out.print("Enter min price: ");
+    double min = scanner.nextDouble();
+    scanner.nextLine();
+
+    System.out.print("Enter max price: ");
+    double max = scanner.nextDouble();
+    scanner.nextLine();
+
+    ArrayList<ListingObject> filtered = new ArrayList<>();
+    for (ListingObject listing : listings) {
+      if (listing.getCost() <= max && listing.getCost() >= min)
+        filtered.add(listing);
+    }
+    return filtered;
+  }
+
+  public static ArrayList<ListingObject> filterByType(Scanner scanner, ArrayList<ListingObject> listings) {
+    System.out.print("Enter listing type " + listingTypes + ": ");
+    String input = scanner.nextLine();
+
+    ArrayList<ListingObject> filtered = new ArrayList<>();
+    for (ListingObject listing : listings) {
+      if (listing.getType().equalsIgnoreCase(input))
+        filtered.add(listing);
+    }
+    return filtered;
+  }
+
+  public static ArrayList<ListingObject> filterByCity(Scanner scanner, ArrayList<ListingObject> listings) {
+    System.out.print("Enter listing city: ");
+    String input = scanner.nextLine();
+
+    ArrayList<ListingObject> filtered = new ArrayList<>();
+    for (ListingObject listing : listings) {
+      if (listing.getCity().equalsIgnoreCase(input))
+        filtered.add(listing);
+    }
+    return filtered;
+  }
+
+  public static ArrayList<ListingObject> filterByCountry(Scanner scanner, ArrayList<ListingObject> listings) {
+    System.out.print("Enter listing country: ");
+    String input = scanner.nextLine();
+
+    ArrayList<ListingObject> filtered = new ArrayList<>();
+    for (ListingObject listing : listings) {
+      if (listing.getCountry().equalsIgnoreCase(input))
+        filtered.add(listing);
+    }
+    return filtered;
   }
 
   /*
    * Asks user for latitude, longitude using scanner, then updates each the
    * distance of listing in listings
    */
-  public static void getDistance(Scanner scanner, ArrayList<ListingDist> listings)
+  public static void getDistance(Scanner scanner, ArrayList<ListingObject> listings)
       throws ClassNotFoundException, SQLException {
     System.out.print("Enter the latitude: ");
     double lat = scanner.nextDouble();
     scanner.nextLine();
 
-    System.out.println();
     System.out.print("Enter the longitude: ");
     double lon = scanner.nextDouble();
     scanner.nextLine();
-    System.out.println();
 
-    for (ListingDist listing : listings) {
+    for (ListingObject listing : listings) {
       double d = distanceBetween(lat, lon, listing.getLat(), listing.getLon());
       listing.setDist(d);
     }
   }
 
   /*
-   * Asks the user for a distance using scanner and returns a filtered list of listings where
+   * Asks the user for a distance using scanner and returns a filtered list of
+   * listings where
    * any listing farther than distance is removed
    */
-  public static ArrayList<ListingDist> filterByDist(Scanner scanner, ArrayList<ListingDist> listings) {
+  public static ArrayList<ListingObject> filterByDist(Scanner scanner, ArrayList<ListingObject> listings) {
     System.out.print("Enter distance(km): ");
     String input = scanner.nextLine();
-    System.out.println();
 
     double distance;
     try {
@@ -330,8 +485,8 @@ public class Listing {
       distance = defaultDistance;
     }
 
-    ArrayList<ListingDist> filtered = new ArrayList<ListingDist>();
-    for (ListingDist listing : listings) {
+    ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
+    for (ListingObject listing : listings) {
       if (listing.getDist() <= distance) {
         filtered.add(listing);
       }
@@ -342,10 +497,10 @@ public class Listing {
   /*
    * Sorts the listings by cost from lowest to highest
    */
-  public static void sortByDistLow(ArrayList<ListingDist> listings) {
-    Collections.sort(listings, new Comparator<ListingDist>() {
+  public static void sortByDistLow(ArrayList<ListingObject> listings) {
+    Collections.sort(listings, new Comparator<ListingObject>() {
       @Override
-      public int compare(ListingDist l1, ListingDist l2) {
+      public int compare(ListingObject l1, ListingObject l2) {
         if (l1.getDist() > l2.getDist())
           return 1;
         if (l1.getDist() == l2.getDist())
@@ -358,10 +513,10 @@ public class Listing {
   /*
    * Sorts the listings by distance from highest to lowest
    */
-  public static void sortByDistHigh(ArrayList<ListingDist> listings) {
-    Collections.sort(listings, new Comparator<ListingDist>() {
+  public static void sortByDistHigh(ArrayList<ListingObject> listings) {
+    Collections.sort(listings, new Comparator<ListingObject>() {
       @Override
-      public int compare(ListingDist l1, ListingDist l2) {
+      public int compare(ListingObject l1, ListingObject l2) {
         if (l1.getDist() > l2.getDist())
           return -1;
         if (l1.getDist() == l2.getDist())
@@ -375,7 +530,7 @@ public class Listing {
    * Asks user for a date using scanner, then updates the cost of each listing in
    * listings
    */
-  public static void getCost(Scanner scanner, ArrayList<ListingDist> listings)
+  public static void getCost(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
     // Ask user for a date
     System.out.print("\nEnter a date(YYYY-MM-DD): ");
@@ -393,14 +548,14 @@ public class Listing {
   /*
    * Adds the cost of listing on the day date to all listings
    */
-  public static void getCostOfDate(ArrayList<ListingDist> listings, Date date)
+  public static void getCostOfDate(ArrayList<ListingObject> listings, Date date)
       throws SQLException, ClassNotFoundException {
     SqlDAO dao = SqlDAO.getInstance();
     ResultSet rs;
     double cost;
     String datestrString = date.toString();
 
-    for (ListingDist listing : listings) {
+    for (ListingObject listing : listings) {
       rs = dao.getRangeOverlapFromDate(listing.getId(), datestrString, datestrString);
       cost = -1;
       if (rs.next()) {
@@ -410,13 +565,28 @@ public class Listing {
     }
   }
 
+  public static void getNextAvailableCost(ArrayList<ListingObject> listings)
+      throws SQLException, ClassNotFoundException {
+    SqlDAO dao = SqlDAO.getInstance();
+    ResultSet rs;
+
+    for (ListingObject listing : listings) {
+      rs = dao.getAvailabilitiesFromListing(listing.getId());
+      if (rs.next()) {
+        listing.setCost(rs.getDouble("cost"));
+        listing.setStartDate(rs.getString("start"));
+        listing.setEndDate(rs.getString("end"));
+      }
+    }
+  }
+
   /*
    * Sorts the listings by cost from lowest to highest
    */
-  public static void sortByCostLow(ArrayList<ListingDist> listings) {
-    Collections.sort(listings, new Comparator<ListingDist>() {
+  public static void sortByCostLow(ArrayList<ListingObject> listings) {
+    Collections.sort(listings, new Comparator<ListingObject>() {
       @Override
-      public int compare(ListingDist l1, ListingDist l2) {
+      public int compare(ListingObject l1, ListingObject l2) {
         if (l1.getCost() < 0)
           return 1;
         if (l1.getCost() > l2.getCost())
@@ -431,10 +601,10 @@ public class Listing {
   /*
    * Sorts the listings by cost from highest to lowest
    */
-  public static void sortByCostHigh(ArrayList<ListingDist> listings) throws SQLException, ClassNotFoundException {
-    Collections.sort(listings, new Comparator<ListingDist>() {
+  public static void sortByCostHigh(ArrayList<ListingObject> listings) throws SQLException, ClassNotFoundException {
+    Collections.sort(listings, new Comparator<ListingObject>() {
       @Override
-      public int compare(ListingDist l1, ListingDist l2) {
+      public int compare(ListingObject l1, ListingObject l2) {
         if (l1.getCost() < l2.getCost())
           return 1;
         if (l1.getCost() == l2.getCost())
@@ -450,14 +620,14 @@ public class Listing {
    * 
    * Idk how postal works in other countries, this prob only works for canada
    */
-  public static ArrayList<ListingDist> filterByPostal(Scanner scanner, ArrayList<ListingDist> listings)
+  public static ArrayList<ListingObject> filterByPostal(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
     System.out.print("Enter postal code: ");
     String input = scanner.nextLine();
     String fsa = input.substring(0, 3).toUpperCase();
 
-    ArrayList<ListingDist> filtered = new ArrayList<ListingDist>();
-    for (ListingDist listing : listings) {
+    ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
+    for (ListingObject listing : listings) {
       if (listing.getPos().contains(fsa))
         filtered.add(listing);
     }
