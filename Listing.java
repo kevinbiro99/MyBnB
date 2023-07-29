@@ -2,7 +2,6 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.Period;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,6 +16,10 @@ public class Listing {
   public static ArrayList<String> listingTypes = new ArrayList<String>(
       Arrays.asList("house", "apartment", "guesthouse", "hotel", "room"));
   private static double defaultDistance = 10;
+
+  /*
+   * Need to change postal code filterign to also account for city and country
+   */
 
   /*
    * int sin, String type, double lat, double lon, String postalcode, String city,
@@ -228,6 +231,8 @@ public class Listing {
     filters.add(new InputKey("co", "country"));
     filters.add(new InputKey("w", "window of availability"));
     filters.add(new InputKey("pr", "price range"));
+    filters.add(new InputKey("a", "amenities"));
+    filters.add(new InputKey("e", "exact address"));
 
     ArrayList<InputKey> sortings = new ArrayList<InputKey>();
     sortings.add(new InputKey("1", "ascending distance"));
@@ -236,20 +241,18 @@ public class Listing {
     sortings.add(new InputKey("4", "descending cost"));
 
     // Filters can stack, sorting methods cannot
-    // Filter: by price range, by amenities, by window of availability, by exact
-    // address [c,a,w,e]
+    // Filter: by amenities, by exact address [a, e]
     // Sort: distance, price
     ArrayList<ListingObject> listings = getListingSet();
     getNextAvailableCost(listings);
 
     while (!input.equals("q")) {
       System.out.println("You have the following filters active:");
-      String msg = "  ";
       for (InputKey filter : filters) {
         if (filter.isPressed())
-          msg = msg + filter.getDescription() + ", ";
+          System.out.print("[" + filter.getDescription() + "] ");
       }
-      System.out.println(msg.substring(0, msg.length() - 2));
+      System.out.println("\n");
 
       System.out.println("Press the button to select/deselect filters, [q] to continue:");
       for (InputKey filter : filters) {
@@ -289,6 +292,8 @@ public class Listing {
           case "price range":
             listings = filterByPriceRange(scanner, listings);
             break;
+          case "amenities":
+            listings = filterByAmenities(scanner, listings);
           default:
             System.out.println("Invalid operation");
         }
@@ -340,7 +345,47 @@ public class Listing {
     }
   }
 
-  public static ArrayList<ListingObject> filterByAvailability(Scanner scanner, ArrayList<ListingObject> listings) throws ClassNotFoundException, SQLException{
+  public static ArrayList<ListingObject> filterByAmenities(Scanner scanner, ArrayList<ListingObject> listings)
+      throws ClassNotFoundException, SQLException {
+    HashSet<String> amenities = new HashSet<String>(); // no duplicates
+    int index = 0;
+    while (true) {
+      System.out.println("Select amenities from the list below for your listing: (exit: e) ");
+      showAmenities();
+      String amenity = scanner.nextLine().toLowerCase();
+      if (amenity.equalsIgnoreCase("e") || amenity.equalsIgnoreCase("exit")) {
+        break;
+      }
+      if (SqlDAO.getInstance().checkAmenityExists(amenity)) {
+        if (amenities.contains(amenity)) {
+          amenities.remove(amenity);
+        } else {
+          amenities.add(amenity);
+        }
+      } else {
+        System.out.println("\nThis amenity does not exist!");
+      }
+
+      index = 0;
+      System.out.println("\nSelected amenities: ");
+      for (String a : amenities) {
+        System.out.format("%-30s", a);
+        index++;
+        if (index % 4 == 0) {
+          System.out.println();
+        }
+      }
+      System.out.println("\n");
+    }
+    return null;
+  }
+  
+  /*
+   * I should check if each listing has all those info using daos
+   */
+
+  public static ArrayList<ListingObject> filterByAvailability(Scanner scanner, ArrayList<ListingObject> listings)
+      throws ClassNotFoundException, SQLException {
     LocalDate startDate, endDate;
     while (true) {
       System.out.print("Enter the start date of the range (YYYY-MM-DD): ");
@@ -350,7 +395,7 @@ public class Listing {
       System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
       String end = scanner.next();
       scanner.nextLine();
-      
+
       try {
         startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -372,7 +417,8 @@ public class Listing {
     return filtered;
   }
 
-  public static void getAvailabilitiesByRange(ArrayList<ListingObject> listings, String start, String end) throws ClassNotFoundException, SQLException{
+  public static void getAvailabilitiesByRange(ArrayList<ListingObject> listings, String start, String end)
+      throws ClassNotFoundException, SQLException {
     SqlDAO dao = SqlDAO.getInstance();
     ResultSet rs;
     String startDate, endDate;
@@ -383,7 +429,7 @@ public class Listing {
       startDate = "Null";
       endDate = "Null";
       cost = -1;
-      if(rs.next()){
+      if (rs.next()) {
         startDate = rs.getString("start");
         endDate = rs.getString("end");
         cost = rs.getDouble("cost");

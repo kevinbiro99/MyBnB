@@ -12,21 +12,23 @@ public class MyBnB {
 
   private static ArrayList<String> functions = new ArrayList<String>();
   private static Scanner scanner;
-	
-	public static void main(String[] args) throws ClassNotFoundException, ParseException, SQLException, IOException {
+
+  public static void main(String[] args) throws ClassNotFoundException, ParseException, SQLException, IOException {
 
     SqlDAO.getInstance().createDatabase("create_database.txt");
 
-    scanner = new Scanner(System.in);  // Create a Scanner object
+    scanner = new Scanner(System.in); // Create a Scanner object
     functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show",
-              "user/review", "listing/search", "listing/book", "listing/cancel", "listing/create", "listing/remove", "listing/update",
-              "listing/review", "reports", "exit"));
-    
-    while(handle(selectFunction()));
+        "user/review", "listing/search", "listing/book", "listing/cancel", "listing/create", "listing/remove",
+        "listing/update",
+        "listing/review", "reports", "exit"));
+
+    while (handle(selectFunction()))
+      ;
 
     scanner.close();
     SqlDAO.deleteInstance();
-	}
+  }
 
   public static boolean handle(String userInput) {
     try {
@@ -49,7 +51,9 @@ public class MyBnB {
         case "listing/search":
           Listing.listingSearch(scanner);
           break;
-        case "report":
+        case "reports":
+          Report.report(scanner);
+          break;
         case "exit":
           return false;
         default:
@@ -66,7 +70,7 @@ public class MyBnB {
     int index = 0;
     for (String f : functions) {
       System.out.format("%-20s", f);
-      index ++;
+      index++;
       if (index % 4 == 0) {
         System.out.println();
       }

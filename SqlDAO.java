@@ -240,4 +240,12 @@ public class SqlDAO {
         stmt.executeUpdate(query);
     }
 
+    public ResultSet getAllCCP() throws SQLException {
+        String query = "SELECT country, city, postal_code FROM listings";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet executeQuery(String query) throws SQLException{
+        return stmt.executeQuery(query);
+    }
 }

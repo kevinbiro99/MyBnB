@@ -1,95 +1,99 @@
 public class ListingObject {
-    private int id;
-    private double dist, lat, lon, cost;
-    private String type, pos, city, country, startDate, endDate;
-    
-    public ListingObject(int id, double dist, double lat, double lon, double cost, String type, String pos, String city,
-            String country) {
-        this.id = id;
-        this.dist = dist;
-        this.lat = lat;
-        this.lon = lon;
-        this.cost = cost;
-        this.type = type;
-        this.pos = pos;
-        this.city = city;
-        this.country = country;
-    }
+  private int id;
+  private double dist, lat, lon, cost;
+  private String type, pos, city, country, startDate, endDate;
 
-    @Override
-    public String toString() {
-        String distString = Math.round(dist * 10.0)/10.0+"km";
-        String costString = "$" + cost;
-        if(cost < 0) costString = "Unknown";
-        if(dist < 0) distString = "Unknown";
-        return String.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s", distString, costString, startDate, endDate, type, city, pos, country, lat, lon);
-        // return "[dist=" + distString + ", lat=" + lat + ", lon=" + lon + ", cost=" + cost + ", type=" + type
-        //         + ", pos=" + pos + ", city=" + city + ", country=" + country + ", id=" + id + "]";
-    }
+  public ListingObject(int id, double dist, double lat, double lon, double cost, String type, String pos, String city,
+      String country) {
+    this.id = id;
+    this.dist = dist;
+    this.lat = lat;
+    this.lon = lon;
+    this.cost = cost;
+    this.type = type;
+    this.pos = pos;
+    this.city = city;
+    this.country = country;
+  }
 
-    public double getDist() {
-        return dist;
-    }
+  @Override
+  public String toString() {
+    String distString = Math.round(dist * 10.0) / 10.0 + "km";
+    String costString = "$" + cost;
+    if (cost < 0)
+      costString = "Unknown";
+    if (dist < 0)
+      distString = "Unknown";
+    return String.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s", distString,
+        costString, startDate, endDate, type, city, pos, country, lat, lon);
+    // return "[dist=" + distString + ", lat=" + lat + ", lon=" + lon + ", cost=" +
+    // cost + ", type=" + type
+    // + ", pos=" + pos + ", city=" + city + ", country=" + country + ", id=" + id +
+    // "]";
+  }
 
-    public double getLat() {
-        return lat;
-    }
+  public double getDist() {
+    return dist;
+  }
 
-    public double getLon() {
-        return lon;
-    }
+  public double getLat() {
+    return lat;
+  }
 
-    public String getType() {
-        return type;
-    }
+  public double getLon() {
+    return lon;
+  }
 
-    public String getPos() {
-        return pos;
-    }
+  public String getType() {
+    return type;
+  }
 
-    public String getCity() {
-        return city;
-    }
+  public String getPos() {
+    return pos;
+  }
 
-    public String getCountry() {
-        return country;
-    }
+  public String getCity() {
+    return city;
+  }
 
-    public void setDist(double dist) {
-        this.dist = dist;
-    }
+  public String getCountry() {
+    return country;
+  }
 
-    public int getId() {
-        return id;
-    }
+  public void setDist(double dist) {
+    this.dist = dist;
+  }
 
-    public void setId(int id) {
-        this.id = id;
-    }
+  public int getId() {
+    return id;
+  }
 
-    public double getCost() {
-        return cost;
-    }
+  public void setId(int id) {
+    this.id = id;
+  }
 
-    public void setCost(double cost) {
-        this.cost = cost;
-    }
+  public double getCost() {
+    return cost;
+  }
 
-    public String getStartDate() {
-        return startDate;
-    }
+  public void setCost(double cost) {
+    this.cost = cost;
+  }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
+  public String getStartDate() {
+    return startDate;
+  }
 
-    public String getEndDate() {
-        return endDate;
-    }
+  public void setStartDate(String startDate) {
+    this.startDate = startDate;
+  }
 
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
-    }
+  public String getEndDate() {
+    return endDate;
+  }
 
-    
+  public void setEndDate(String endDate) {
+    this.endDate = endDate;
+  }
+
 }
