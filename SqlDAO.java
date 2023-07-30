@@ -241,8 +241,8 @@ public class SqlDAO {
     }
 
     public void bookListing(int listing_id, int sin, String start, String end, long card) throws SQLException {
-        String query = "INSERT INTO Bookings (listing_id, sin, start, end, card) VALUES (\'%d\',\'%d\', \'%s\', \'%s\', \'%d\');";
-        query = String.format(query, listing_id, sin, start, end, card);
+        String query = "INSERT INTO Bookings (listing_id, sin, start, end, card, host_sin) SELECT \'%d\',\'%d\', \'%s\', \'%s\', \'%d\', sin FROM Hosts WHERE listing_id = \'%d\';";
+        query = String.format(query, listing_id, sin, start, end, card, listing_id);
         System.out.println(query);
         stmt.executeUpdate(query);
         System.out.println("Booking for: " + listing_id + " by user with sin: " + sin + " added to database");
@@ -265,7 +265,7 @@ public class SqlDAO {
 
     public void cancelBooking(int booking_id, int canceller_sin) throws SQLException {
         // Save cancellation and who cancelled
-        String query = "INSERT INTO Cancelled (canceller_sin, sin, listing_id, start, end, card) SELECT \'%d\' AS canceller_sin, sin, listing_id, start, end, card FROM Bookings WHERE booking_id = \'%d\';";
+        String query = "INSERT INTO Cancelled (canceller_sin, sin, host_sin, listing_id, start, end, card) SELECT \'%d\' AS canceller_sin, sin, host_sin, listing_id, start, end, card FROM Bookings WHERE booking_id = \'%d\';";
         query = String.format(query, canceller_sin, booking_id);
         stmt.executeUpdate(query);
 
@@ -330,6 +330,42 @@ public class SqlDAO {
         ResultSet rs = stmt.executeQuery(query);
         rs.next();
         return rs.getBoolean("has_listings_or_bookings");
+    }
+
+    public ResultSet getUsersAndHostsFromCompletedRentals(int sin) throws SQLException {
+        String query = "(select distinct host_sin as user from bookings where sin = \'%d\' and complete = \'1\') union (select distinct sin as user from bookings where host_sin = \'%d\' and complete = \'1\')";
+        query = String.format(query, sin, sin);
+        return stmt.executeQuery(query);
+    }
+
+    public void insertUserReview(int poster_sin, int user_sin, String comment, int rating) throws SQLException {
+        String query = "insert into user_review (poster_sin, user_sin, comment, rating) values (\'%d\', \'%d\', \'%s\', \'%d\')";
+        query = String.format(query, poster_sin, user_sin, comment, rating);
+        stmt.executeUpdate(query);
+    }
+
+    public ResultSet getUserReviews(int sin) throws SQLException {
+        String query = "select * from user_review where user_sin = \'%d\'";
+        query = String.format(query, sin);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getCompletedStays(int sin) throws SQLException {
+        String query = "select distinct listing_id from bookings where sin = \'%d\' and complete = \'1\'";
+        query = String.format(query, sin);
+        return stmt.executeQuery(query);
+    }
+
+    public void insertListingReview(int poster_sin, int listing_id, String comment, int rating) throws SQLException {
+        String query = "insert into listing_review (poster_sin, listing_id, comment, rating) values (\'%d\', \'%d\', \'%s\', \'%d\')";
+        query = String.format(query, poster_sin, listing_id, comment, rating);
+        stmt.executeUpdate(query);
+    }
+
+    public ResultSet getListingReviews(int listing_id) throws SQLException {
+        String query = "select * from listing_review where listing_id = \'%d\'";
+        query = String.format(query, listing_id);
+        return stmt.executeQuery(query);
     }
 
 }

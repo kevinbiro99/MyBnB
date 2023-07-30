@@ -272,4 +272,221 @@ public class User {
         SqlDAO.getInstance().completeStay(booking);
 
     }
+
+    /*
+     * Can only review a user if you have rented from this user or have hosted a listing
+     * that this user has rented. This information is ONLY in Bookings since you 
+     * need to have completed the booking to comment and rate.
+     */
+    public static void reviewUser(Scanner scanner) throws ClassNotFoundException, SQLException {
+        System.out.println("Enter your SIN: ");
+        int sin = scanner.nextInt();
+        scanner.nextLine();
+        if (!SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("INVALID USER SIN");
+            return;
+        }
+
+        // show all users in database that this user has completed a stay with
+        ArrayList<Integer> users = showAllUsersAndHostsFromCompletedRentals(sin);
+
+        if (users.isEmpty()) {
+            System.out.println("You have not completed any stays or do not have renters who completed stays at your listings to make a user review");
+            return;
+        }
+
+        System.out.println("Select a user to review (user_sin): ");
+        int user = scanner.nextInt();
+        scanner.nextLine();
+        if (!users.contains(user)) {
+            System.out.println("This user sin: " + user + " does not exist");
+            return;
+        }
+
+        System.out.println("Enter a comment for this user (1000 chars max): ");
+        String comment = scanner.nextLine();
+        System.out.println("Enter a rating for this user (1-5): ");
+        int rating = scanner.nextInt();
+        scanner.nextLine();
+        while(rating < 1 || rating > 5) {
+            System.out.println("Please enter a valid rating in the range 1-5: ");
+            rating = scanner.nextInt();
+            scanner.nextLine();
+        }
+
+        SqlDAO.getInstance().insertUserReview(sin, user, comment, rating);
+    }
+
+    public static ArrayList<Integer> showAllUsersAndHostsFromCompletedRentals(int renter_sin) throws ClassNotFoundException, SQLException {
+        ResultSet rs = SqlDAO.getInstance().getUsersAndHostsFromCompletedRentals(renter_sin);
+
+        System.out.println("Hosts you can review: ");
+        ArrayList<Integer> users = new ArrayList<Integer>();
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int sin  = rs.getInt("user");
+            users.add(sin);
+            
+            //Display values
+            System.out.println("User sin: " + sin);
+        }
+
+        rs.close();
+        return users;
+    }
+
+    public static void showUserReviews(Scanner scanner) throws ClassNotFoundException, SQLException {
+        System.out.println("Enter the SIN of the user to see their reviews: ");
+        int sin = scanner.nextInt();
+        scanner.nextLine();
+        if (!SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("INVALID USER SIN");
+            return;
+        }
+
+        ResultSet rs = SqlDAO.getInstance().getUserReviews(sin);
+
+        System.out.println("Reviews for this user: ");
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int poster = rs.getInt("poster_sin");
+            String comment = rs.getString("comment");
+            int rating = rs.getInt("rating");
+            
+            //Display values
+            System.out.println("Comment from " + poster + ": ");
+            printFormattedText(comment, 50);
+            System.out.println("Rating: " + rating);
+            System.out.println();
+        }
+
+        rs.close();
+    }
+
+    public static void printFormattedText(String text, int lineWidth) {
+        if (text == null || text.isEmpty()) {
+            System.out.println("The input text is empty.");
+            return;
+        }
+
+        StringBuilder formattedText = new StringBuilder();
+        StringBuilder wordBuffer = new StringBuilder();
+        int currentLineWidth = 0;
+
+        for (char c : text.toCharArray()) {
+            if (Character.isWhitespace(c)) {
+                if (currentLineWidth + wordBuffer.length() + 1 > lineWidth) {
+                    formattedText.append(System.lineSeparator());
+                    currentLineWidth = 0;
+                }
+
+                formattedText.append(wordBuffer).append(c);
+                currentLineWidth += wordBuffer.length() + 1;
+                wordBuffer.setLength(0);
+            } else {
+                wordBuffer.append(c);
+            }
+        }
+
+        if (currentLineWidth + wordBuffer.length() > lineWidth) {
+            formattedText.append(System.lineSeparator());
+        }
+
+        formattedText.append(wordBuffer);
+
+        System.out.println(formattedText.toString());
+    }
+
+    /*
+     * Can only review a listing if you have completed a stay recently
+     */
+    public static void reviewListing(Scanner scanner) throws ClassNotFoundException, SQLException {
+        System.out.println("Enter your SIN: ");
+        int sin = scanner.nextInt();
+        scanner.nextLine();
+        if (!SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("INVALID USER SIN");
+            return;
+        }
+
+        // show all listings in database that this user has rented and completed a stay
+        ArrayList<Integer> listings = showAllCompletedStays(sin);
+
+        if (listings.isEmpty()) {
+            System.out.println("You have not completed any stays to make a listing review");
+            return;
+        }
+
+        System.out.println("Select a listing to review (listing_id): ");
+        int listing = scanner.nextInt();
+        scanner.nextLine();
+        if (!listings.contains(listing)) {
+            System.out.println("This listing id: " + listing + " does not exist");
+            return;
+        }
+
+        System.out.println("Enter a comment for this listing (1000 chars max): ");
+        String comment = scanner.nextLine();
+        System.out.println("Enter a rating for this listing (1-5): ");
+        int rating = scanner.nextInt();
+        scanner.nextLine();
+        while(rating < 1 || rating > 5) {
+            System.out.println("Please enter a valid rating in the range 1-5: ");
+            rating = scanner.nextInt();
+            scanner.nextLine();
+        }
+
+        SqlDAO.getInstance().insertListingReview(sin, listing, comment, rating);
+    }
+
+    public static ArrayList<Integer> showAllCompletedStays(int sin) throws ClassNotFoundException, SQLException {
+        ResultSet rs = SqlDAO.getInstance().getCompletedStays(sin);
+
+        System.out.println("Listings you can review: ");
+        ArrayList<Integer> listings = new ArrayList<Integer>();
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int listing_id  = rs.getInt("listing_id");
+            listings.add(listing_id);
+            
+            //Display values
+            System.out.println("Listing: " + listing_id);
+        }
+
+        rs.close();
+        return listings;
+    }
+
+    public static void showListingReviews(Scanner scanner) throws ClassNotFoundException, SQLException {
+        ArrayList<Integer> listings = Listing.displayAllListings();
+        System.out.println("Enter the listing id to see their reviews: ");
+        int listing = scanner.nextInt();
+        scanner.nextLine();
+        if (!listings.contains(listing)){
+            System.out.println("INVALID LISTING ID");
+            return;
+        }
+
+        ResultSet rs = SqlDAO.getInstance().getListingReviews(listing);
+
+        System.out.println("Reviews for this listing: ");
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int poster = rs.getInt("poster_sin");
+            String comment = rs.getString("comment");
+            int rating = rs.getInt("rating");
+            
+            //Display values
+            System.out.println("Comment from " + poster + ": ");
+            printFormattedText(comment, 50);
+            System.out.println("Rating: " + rating);
+            System.out.println();
+        }
+
+        rs.close();
+    }
 }
