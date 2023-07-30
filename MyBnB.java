@@ -12,8 +12,8 @@ public class MyBnB {
 
   private static ArrayList<String> functions = new ArrayList<String>();
   private static Scanner scanner;
-	
-	public static void main(String[] args) throws ClassNotFoundException, ParseException, SQLException, IOException {
+
+  public static void main(String[] args) throws ClassNotFoundException, ParseException, SQLException, IOException {
 
     SqlDAO.getInstance().createDatabase("create_database.txt");
 
@@ -27,7 +27,7 @@ public class MyBnB {
 
     scanner.close();
     SqlDAO.deleteInstance();
-	}
+  }
 
   public static boolean handle(String userInput) {
     try {
@@ -74,13 +74,12 @@ public class MyBnB {
         case "bookings/completestay":
           User.completeStay(scanner);
           break;
-        case "listing/search/dist":
-          Listing.showListingsNear(scanner);
+        case "listing/search":
+          Listing.listingSearch(scanner);
           break;
-        case "listing/search/price":
-          
+        case "reports":
+          Report.report(scanner);
           break;
-        case "report":
         case "exit":
           return false;
         default:

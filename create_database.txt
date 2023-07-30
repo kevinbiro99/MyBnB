@@ -84,6 +84,16 @@ INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VAL
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 43.665318, -79.396555, 'M5T 1G8', 'Toronto', 'Canada');
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 43.660919, -79.385694, 'M5B 1V8', 'Toronto', 'Canada');
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.649988, -79.372685, 'M5V 3V9', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('House', 40.713393, -74.012209, '10007', 'New York', 'USA');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 38.889453, -77.035960, '20006', 'Washington', 'USA');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 64.856520, -147.689753, '99701', 'Fairbanks', 'USA');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 48.858286, 2.294476, '75007', 'Paris', 'France');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.649988, -79.372685, '00184', 'Rome', 'Italy');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('House', 35.658580, 139.745559, '105-0011', 'Tokyo', 'Japan');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 35.659485, 139.700500, '150-0002', 'Tokyo', 'Japan');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 49.249782, -123.089642, 'V5V 4E4', 'Vancouver', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 39.955173, -75.160046, '19107', 'Philadelphia', 'USA');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 0, 0, '12345', 'I made it up', 'Atlantic Ocean');
 
 -- Populate Hosts of above listings
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 1);
@@ -93,8 +103,8 @@ INSERT INTO Hosts (sin, listing_id) VALUES (12345, 4);
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 5);
 
 -- Populate Availabilities of above listings
-INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (1, 120.00, '2023-08-20', '2023-08-25'), (1, 90.00, '2023-09-05', '2023-09-15'), (1, 80.00, '2023-10-01', '2023-10-10'), (1, 100.00, '2023-11-05', '2023-11-15'), (1, 110.00, '2023-12-01', '2023-12-20');
-INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (2, 120.00, '2023-08-20', '2023-08-25'), (2, 90.00, '2023-09-05', '2023-09-15'),(2, 80.00, '2023-10-01', '2023-10-10'),(2, 100.00, '2023-11-05', '2023-11-15'),(2, 110.00, '2023-12-01', '2023-12-20');
-INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (3, 120.00, '2023-08-20', '2023-08-25'),(3, 90.00, '2023-09-05', '2023-09-15'),(3, 80.00, '2023-10-01', '2023-10-10'),(3, 100.00, '2023-11-05', '2023-11-15'),(3, 110.00, '2023-12-01', '2023-12-20');
+INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (1, 100.00, '2023-07-30', '2023-07-30'), (1, 100.00, '2023-08-20', '2023-08-25'), (1, 90.00, '2023-09-05', '2023-09-15'), (1, 80.00, '2023-10-01', '2023-10-10'), (1, 100.00, '2023-11-05', '2023-11-15'), (1, 110.00, '2023-12-01', '2023-12-20');
+INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (2, 105.00, '2023-08-20', '2023-08-25'), (2, 90.00, '2023-09-05', '2023-09-15'),(2, 80.00, '2023-10-01', '2023-10-10'),(2, 100.00, '2023-11-05', '2023-11-15'),(2, 110.00, '2023-12-01', '2023-12-20');
+INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (3, 125.00, '2023-08-20', '2023-08-25'),(3, 90.00, '2023-09-05', '2023-09-15'),(3, 80.00, '2023-10-01', '2023-10-10'),(3, 100.00, '2023-11-05', '2023-11-15'),(3, 110.00, '2023-12-01', '2023-12-20');
 INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (4, 120.00, '2023-08-20', '2023-08-25'),(4, 90.00, '2023-09-05', '2023-09-15'),(4, 80.00, '2023-10-01', '2023-10-10'),(4, 100.00, '2023-11-05', '2023-11-15'),(4, 110.00, '2023-12-01', '2023-12-20');
 INSERT INTO Availabilities (listing_id, cost, start, end, availability) VALUES (5, 120.00, '2023-08-20', '2023-08-25', 0),(5, 90.00, '2023-09-05', '2023-09-15', 0),(5, 80.00, '2023-10-01', '2023-10-10', 0),(5, 100.00, '2023-11-05', '2023-11-15', 0),(5, 110.00, '2023-12-01', '2023-12-20', 0);

@@ -228,6 +228,12 @@ public class SqlDAO {
         return stmt.executeQuery(query);
     }
 
+    public ResultSet getRangeContainsDate(int listing_id, String start, String end) throws SQLException {
+        String query = "SELECT * FROM availabilities WHERE listing_id = \'%d\' AND (start <= \'%s\' AND end >= \'%s\')";
+        query = String.format(query, listing_id, start, end);
+        return stmt.executeQuery(query);
+    }
+
     public void deleteRangeOverlapFromDate(int listing_id, String start, String end) throws SQLException {
         String query = "DELETE FROM availabilities WHERE listing_id = \'%d\' AND (start BETWEEN \'%s\' AND \'%s\' OR end BETWEEN \'%s\' AND \'%s\' OR start <= \'%s\' AND end >= \'%s\')";
         query = String.format(query, listing_id, start, end, start, end, start, end);
@@ -368,4 +374,12 @@ public class SqlDAO {
         return stmt.executeQuery(query);
     }
 
+    public ResultSet getAllCCP() throws SQLException {
+        String query = "SELECT country, city, postal_code FROM listings";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet executeQuery(String query) throws SQLException{
+        return stmt.executeQuery(query);
+    }
 }
