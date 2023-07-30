@@ -29,7 +29,10 @@ drop table if exists hosts;
 CREATE TABLE Hosts (sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, PRIMARY KEY (listing_id, sin), FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (sin) REFERENCES Users (sin));
 
 drop table if exists bookings;
-CREATE TABLE Bookings (booking_id INTEGER PRIMARY KEY AUTO_INCREMENT, sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, start DATE NOT NULL, end DATE NOT NULL, card INTEGER NOT NULL, FOREIGN KEY (listing_id) REFERENCES Listings (listing_id), FOREIGN KEY (sin) REFERENCES Users (sin));
+CREATE TABLE Bookings (booking_id INTEGER PRIMARY KEY AUTO_INCREMENT, sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, start DATE NOT NULL, end DATE NOT NULL, card BIGINT NOT NULL, complete BOOLEAN NOT NULL DEFAULT 0);
+
+drop table if exists cancelled;
+CREATE TABLE Cancelled (cancel_id INTEGER PRIMARY KEY AUTO_INCREMENT, canceller_sin INTEGER NOT NULL, sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, start DATE NOT NULL, end DATE NOT NULL, card BIGINT NOT NULL);
 
 -- Populate users table with data
 INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','John Smith','DEF 456','Toronto','Canada','1989-02-23','Locksmith');

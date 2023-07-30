@@ -118,6 +118,11 @@ public class Listing {
         }
       }
 
+      if (!isDateRangeValid(start, end)) {
+        System.out.println("Invalid date range!");
+        continue;
+      }
+
       if (!invalid) {
         // Insert a date into the database for each date in the given start-end range
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -474,7 +479,7 @@ public class Listing {
 
     // collect payment info (credit card number)
     System.out.println("Enter your credit card number: ");
-    int card = scanner.nextInt();
+    long card = scanner.nextLong();
     scanner.nextLine();
 
     ArrayList<Integer> listings = displayAllListings();
@@ -497,6 +502,10 @@ public class Listing {
     boolean done = false;
     while (!done) {
       ArrayList<ArrayList<String>> availabilities = displayListingAvailabilities(listing);
+      if (availabilities.isEmpty()) {
+        System.out.println("All availabilities are booked.");
+        return;
+      }
       ArrayList<String> availability = new ArrayList<String>();
       boolean invalid = true;
 
@@ -564,6 +573,48 @@ public class Listing {
     System.out.println();
     System.out.println();
     return listingIds;
+  }
+
+  /*
+   * You can only remove a listing if it has no bookings or if the booked availabilities are complete
+   */
+  public static void removeListing(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.println("Enter your SIN: ");
+    int sin = scanner.nextInt();
+    scanner.nextLine();
+    if (!SqlDAO.getInstance().checkUserExists(sin)){
+      System.out.println("INVALID USER SIN");
+      return;
+    }
+
+    // display listings for this user:
+    ArrayList<Integer> listings = displayUserListings(sin);
+    if(listings.isEmpty()) {
+      System.out.println("You don't have any listings to remove");
+      return;
+    }
+
+    // User selects a listing to remove
+    System.out.println("Select the listing to remove (by id): ");
+    int listing = scanner.nextInt();
+    scanner.nextLine();
+    if (!listings.contains(listing)) {
+      System.out.println("This listing id: " + listing + " does not exist");
+      return;
+    }
+
+    // Check that the listing has no bookings
+    boolean booked = SqlDAO.getInstance().isListingBooked(listing);
+    if (booked) {
+      System.out.println("Cancel all bookings before removing a listing");
+      return;
+    }
+
+    // Otherwise, delete the listing and all availabilities
+    SqlDAO.getInstance().removeListing(listing);
+
+    System.out.println("Listing with id: " + listing + " was removed");
+    return;
   }
 
 }

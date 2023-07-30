@@ -240,7 +240,7 @@ public class SqlDAO {
         stmt.executeUpdate(query);
     }
 
-    public void bookListing(int listing_id, int sin, String start, String end, int card) throws SQLException {
+    public void bookListing(int listing_id, int sin, String start, String end, long card) throws SQLException {
         String query = "INSERT INTO Bookings (listing_id, sin, start, end, card) VALUES (\'%d\',\'%d\', \'%s\', \'%s\', \'%d\');";
         query = String.format(query, listing_id, sin, start, end, card);
         System.out.println(query);
@@ -252,6 +252,84 @@ public class SqlDAO {
         String query = "select * from bookings where sin = \'%d\'";
         query = String.format(query, sin);
         return stmt.executeQuery(query);
+    }
+
+    /*
+     * Returns the bookings that are made on the user's listings and by the host
+     */
+    public ResultSet getBookingsFromHost(int sin) throws SQLException {
+        String query = "(select * from bookings where listing_id in (select listing_id from hosts where sin = \'%d\')) union (select * from bookings where sin = \'%d\')";
+        query = String.format(query, sin, sin);
+        return stmt.executeQuery(query);
+    }
+
+    public void cancelBooking(int booking_id, int canceller_sin) throws SQLException {
+        // Save cancellation and who cancelled
+        String query = "INSERT INTO Cancelled (canceller_sin, sin, listing_id, start, end, card) SELECT \'%d\' AS canceller_sin, sin, listing_id, start, end, card FROM Bookings WHERE booking_id = \'%d\';";
+        query = String.format(query, canceller_sin, booking_id);
+        stmt.executeUpdate(query);
+
+        // Update availability
+        query = "UPDATE availabilities AS a JOIN Bookings AS b ON a.start = b.start AND a.end = b.end AND a.listing_id = b.listing_id SET a.availability = 1 WHERE b.booking_id = \'%d\';";
+        query = String.format(query, booking_id);
+        stmt.executeUpdate(query);
+
+        // Remove booking
+        query = "DELETE FROM Bookings WHERE booking_id = \'%d\';";
+        query = String.format(query, booking_id);
+        stmt.executeUpdate(query);
+    }
+
+    /*
+     * Returns whether the listing is booked or the stay is complete
+     */
+    public boolean isListingBooked(int listing_id) throws SQLException {
+        String query = "SELECT EXISTS (SELECT 1 FROM availabilities AS a JOIN Bookings AS b ON a.start = b.start AND a.end = b.end AND a.listing_id = b.listing_id WHERE a.availability = 0 AND a.listing_id = \'%d\' AND b.complete = 0) AS is_booked;";
+        query = String.format(query, listing_id);
+        ResultSet rs = stmt.executeQuery(query);
+        rs.next();
+        return rs.getBoolean("is_booked");
+    }
+
+    public void removeListing(int listing_id) throws SQLException {
+        String query = "DELETE FROM Availabilities WHERE listing_id = \'%d\';";
+        query = String.format(query, listing_id);
+        stmt.executeUpdate(query);
+
+        query = "DELETE FROM Hosts WHERE listing_id = \'%d\';";
+        query = String.format(query, listing_id);
+        stmt.executeUpdate(query);
+
+        /*
+         * Does not necessarily have offerings, so check if exists
+         */
+        query = "SELECT EXISTS (SELECT 1 FROM Offerings WHERE listing_id = \'%d\') as has_offering";
+        query = String.format(query, listing_id);
+        ResultSet rs = stmt.executeQuery(query);
+        rs.next();
+        if (rs.getBoolean("has_offering")) {
+            query = "DELETE FROM Offering WHERE listing_id = \'%d\';";
+            query = String.format(query, listing_id);
+            stmt.executeUpdate(query);
+        }
+
+        query = "DELETE FROM Listings WHERE listing_id = \'%d\';";
+        query = String.format(query, listing_id);
+        stmt.executeUpdate(query);
+    }
+
+    public void completeStay(int booking_id) throws SQLException {
+        String query = "UPDATE Bookings SET complete = 1 WHERE booking_id = \'%d\';";
+        query = String.format(query, booking_id);
+        stmt.executeUpdate(query);
+    }
+
+    public boolean userHasListingsOrBookings(int sin) throws SQLException {
+        String query = "SELECT EXISTS (SELECT 1 FROM Hosts WHERE sin = \'%d\') OR EXISTS (SELECT 1 FROM Bookings WHERE sin = \'%d\') AS has_listings_or_bookings;";
+        query = String.format(query, sin, sin);
+        ResultSet rs = stmt.executeQuery(query);
+        rs.next();
+        return rs.getBoolean("has_listings_or_bookings");
     }
 
 }

@@ -18,8 +18,9 @@ public class MyBnB {
     SqlDAO.getInstance().createDatabase("create_database.txt");
 
     scanner = new Scanner(System.in);  // Create a Scanner object
-    functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show",
-              "user/review", "listing/search", "listing/search/dist", "listing/book", "bookings/show", "listing/cancel", "listing/create", "listing/remove", "listing/update",
+    functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show", 
+              "user/review", "listing/search", "listing/search/dist", "listing/book", "bookings/show", "bookings/completestay", 
+              "bookings/cancel", "listing/create", "listing/remove", "listing/update",
               "listing/review", "reports", "exit"));
     
     while(handle(selectFunction()));
@@ -47,13 +48,19 @@ public class MyBnB {
           Listing.updateListing(scanner);
           break;
         case "listing/remove":
-          // Listing.removeListing(scanner); // TODO
+          Listing.removeListing(scanner);
           break;
         case "listing/book":
           Listing.bookListing(scanner);
           break;
         case "bookings/show":
-          User.showUserBookings(scanner);
+          User.showBookingsForHost(scanner, -1);
+          break;
+        case "bookings/cancel":
+          User.cancelBooking(scanner);
+          break;
+        case "bookings/completestay":
+          User.completeStay(scanner);
           break;
         case "listing/search/dist":
           Listing.showListingsNear(scanner);
@@ -77,7 +84,7 @@ public class MyBnB {
     System.out.println("\nFunctions supported:");
     int index = 0;
     for (String f : functions) {
-      System.out.format("%-20s", f);
+      System.out.format("%-25s", f);
       index ++;
       if (index % 4 == 0) {
         System.out.println();

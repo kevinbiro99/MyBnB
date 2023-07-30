@@ -7,6 +7,7 @@ import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 /*
  * This class handles all user table interactions
@@ -39,7 +40,43 @@ public class User {
         rs.close();
     }
 
-    public static void showUserBookings(Scanner scanner) throws ClassNotFoundException, SQLException {
+    /*
+     * Only shows the bookings that the user made
+     */
+    public static ArrayList<Integer> showUserBookings(Scanner scanner, int sin) throws ClassNotFoundException, SQLException {
+        ResultSet rs = SqlDAO.getInstance().getBookings(sin);
+
+        System.out.println("Bookings: ");
+        ArrayList<Integer> bookings = new ArrayList<Integer>();
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int listing_id  = rs.getInt("listing_id");
+            Date start = rs.getDate("start");
+            Date end = rs.getDate("end");
+            long card = rs.getLong("card");
+            int booking_id = rs.getInt("booking_id");
+            boolean complete = rs.getBoolean("complete");
+            bookings.add(booking_id);
+            
+            //Display values
+            System.out.print("booking_id: " + booking_id + ", (listing_id: " + listing_id);
+            System.out.print(", start: " + start);
+            System.out.print(", end: " + end);
+            System.out.print(", complete: " + complete);
+            System.out.println(", card: " + card + ")");
+        }
+
+        rs.close();
+        return bookings;
+    }
+
+    /*
+     * You can cancel a booking if you made it (in bookings table linked to your sin)
+     * OR if you are the host of the listing in the bookings table.
+     */
+    public static void cancelBooking(Scanner scanner) throws ClassNotFoundException, SQLException {
+        // show bookings the user made 
         System.out.println("Enter your SIN: ");
         int sin = scanner.nextInt();
         scanner.nextLine();
@@ -47,32 +84,45 @@ public class User {
             System.out.println("INVALID USER SIN");
             return;
         }
-        
-        ResultSet rs = SqlDAO.getInstance().getBookings(sin);
 
-        System.out.println("Bookings: ");
-        // Extract data from result set
-        while(rs.next()){
-            //Retrieve by column name
-            int listing_id  = rs.getInt("listing_id");
-            Date start = rs.getDate("start");
-            Date end = rs.getDate("end");
-            int card = rs.getInt("card");
-        
-            //Display values
-            System.out.print("(listing_id: " + listing_id);
-            System.out.print(", start: " + start);
-            System.out.print(", end: " + end);
-            System.out.println(", card: " + card + ")");
+        // show bookings made for listings the user is hosting
+        ArrayList<Integer> bookings = showBookingsForHost(scanner, sin);
+
+        if (bookings.isEmpty()) {
+            System.out.println("This user has no bookings that are not complete");
+            return;
         }
 
-        rs.close();
+        // can cancel any of the above bookings
+        System.out.println("Select a booking to cancel (booking_id): ");
+        int booking = scanner.nextInt();
+        scanner.nextLine();
+        if (!bookings.contains(booking)) {
+            System.out.println("This booking id: " + booking + " for this user does not exist or the stay is complete");
+            return;
+        }
+
+        // update availability, insert into cancelled table, remove from booking table
+        SqlDAO.getInstance().cancelBooking(booking, sin);
     }
 
+    /*
+     * Need to make sure all bookings are cancelled, and all listings have no bookings,
+     * all listings are removed.
+     * Keep bookings (cancellations), comments and ratings for reporting purposes
+     */
     public static void deleteUser(Scanner scanner) throws ClassNotFoundException, SQLException {
         System.out.println("Enter the SIN of the user you want to delete: ");
         int sin = scanner.nextInt();
         scanner.nextLine();
+
+        // Check if user has any bookings, listings, 
+        if(SqlDAO.getInstance().userHasListingsOrBookings(sin)) {
+            System.out.println("This user has listings and/or bookings that are not removed/cancelled");
+            System.out.println("Cancel and remove all bookings and listings to delete your account");
+            return;
+        }
+
         SqlDAO.getInstance().deleteUser(sin);
     }
 
@@ -136,5 +186,90 @@ public class User {
         
         // Insert into database
         SqlDAO.getInstance().registerUser(sin, name, postal, city, country, dob, occupation);
+    }
+
+    /*
+     * Will not show completed bookings because you cannot cancel those.
+     */
+    public static ArrayList<Integer> showBookingsForHost(Scanner scanner, int sin) throws ClassNotFoundException, SQLException {
+        if (sin < 0) {
+            System.out.println("Enter your SIN: ");
+            sin = scanner.nextInt();
+            scanner.nextLine();
+            if (!SqlDAO.getInstance().checkUserExists(sin)){
+                System.out.println("INVALID USER SIN");
+                return null;
+            }
+        }
+        
+        ResultSet rs = SqlDAO.getInstance().getBookingsFromHost(sin);
+
+        System.out.println("Bookings made by the user " + sin + ": ");
+        ArrayList<Integer> bookings = new ArrayList<Integer>();
+
+        boolean diffUsr = false;
+
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int booking_id = rs.getInt("booking_id");
+            int listing_id  = rs.getInt("listing_id");
+            Date start = rs.getDate("start");
+            Date end = rs.getDate("end");
+            long card = rs.getLong("card");
+            int booking_sin = rs.getInt("sin");
+            boolean complete = rs.getBoolean("complete");
+
+            if (!diffUsr && booking_sin != sin) {
+                System.out.println("\nBookings made on your listings: ");
+                diffUsr = true;
+            }
+        
+            if (!complete) bookings.add(booking_id);
+
+            //Display values
+            System.out.print("booking_id: " + booking_id + ", (listing_id: " + listing_id);
+            System.out.print(", start: " + start);
+            System.out.print(", end: " + end);
+            System.out.print(", booking_sin: " + booking_sin);
+            System.out.print(", complete: " + complete);
+            System.out.println(", card: " + card + ")");
+        }
+
+        rs.close();
+        return bookings;
+    }
+
+    /*
+     * Need to have completed a stay in order to comment or give a rating, same for hosts they can only
+     * rate a renter if they completed a stay.
+     */
+    public static void completeStay(Scanner scanner) throws ClassNotFoundException, SQLException {
+        System.out.println("Enter your SIN: ");
+        int sin = scanner.nextInt();
+        scanner.nextLine();
+        if (!SqlDAO.getInstance().checkUserExists(sin)){
+            System.out.println("INVALID USER SIN");
+            return;
+        }
+
+        ArrayList<Integer> bookings = showUserBookings(scanner, sin);
+
+        if (bookings.isEmpty()) {
+            System.out.println("This user has no bookings");
+            return;
+        }
+
+        System.out.println("Select a booking to complete (booking_id): ");
+        int booking = scanner.nextInt();
+        scanner.nextLine();
+        if (!bookings.contains(booking)) {
+            System.out.println("This booking id: " + booking + " for this user does not exist");
+            return;
+        }
+
+        // update availability, insert into cancelled table, remove from booking table
+        SqlDAO.getInstance().completeStay(booking);
+
     }
 }
