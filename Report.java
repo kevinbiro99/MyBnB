@@ -3,17 +3,27 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import com.mysql.cj.protocol.Resultset;
-
 public class Report {
   public static void report(Scanner scanner) throws ClassNotFoundException, SQLException {
     String input = "";
 
+    /*
+     * This is a query that identifies the possible commercial hosts, something that
+     * the system should flag and prohibit
+     * 
+     * What do we actually do about this, prevent making more listings? warning? ban
+     * user?
+     */
+
     ArrayList<InputKey> options = new ArrayList<InputKey>();
-    options.add(new InputKey(1, "d", "distance"));
+    options.add(new InputKey(1, "d", ""));
     options.add(new InputKey(2, "c", "the total number of listings per country"));
     options.add(new InputKey(3, "cc", "the total number of listings per country and city"));
     options.add(new InputKey(4, "ccp", "the total number of listings per country, city, and postal code"));
+    options.add(new InputKey(5, "lc", "the number of listings each host has by country"));
+    options.add(new InputKey(6, "lcc", "the number of listings each host has by country and city"));
+    options.add(new InputKey(7, "m10", "the hosts that have more than 10% of listings in ac country"));
+    options.add(new InputKey(10, "t", ""));
 
     while (!input.equals("q")) {
       int selected = -1;
@@ -30,16 +40,28 @@ public class Report {
       System.out.println();
       switch (selected) {
         case 1:
-          reportDateRangeByCity(scanner);
+          reportDateRangeByCity();
           break;
         case 2:
-          reportTotalListingByCCP(scanner, 0);
+          reportTotalListingByCountry();
           break;
         case 3:
-          reportTotalListingByCCP(scanner, 1);
+          reportTotalListingByCountryCity();
           break;
         case 4:
-          reportTotalListingByCCP(scanner, 2);
+          reportTotalListingByCCP();
+          break;
+        case 5:
+          reportRankHostsByListingCountry();
+          break;
+        case 6:
+          reportRankHostByListingCountryCity();
+          break;
+        case 7:
+          reportMorethan10percent();
+          break;
+        case 10:
+          myTestFunction(scanner);
           break;
         default:
           System.out.println();
@@ -49,130 +71,66 @@ public class Report {
     }
   }
 
-  public static void reportDateRangeByCity(Scanner scanner) {
-    // Get all city
-    // For each city get all booking,
-  }
-
-  public static void reportTotalListingByCCP(Scanner scanner, int mode)
-      throws SQLException, ClassNotFoundException {
-    ResultSet rs = SqlDAO.getInstance().getAllCCP();
-    ArrayList<CCPcounter> countries = new ArrayList<>();
-    String country, city, postal;
-    boolean found;
-
+  public static void myTestFunction(Scanner scanner) throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().morethan10percent();
     while (rs.next()) {
-      country = rs.getString("country");
-      city = rs.getString("city");
-      postal = rs.getString("postal_code");
-      found = false;
-      for (CCPcounter c : countries) {
-        if (c.getCountry().equalsIgnoreCase(country)) {
-          if (mode == 0) {
-            c.setCount(c.getCount() + 1);
-            found = true;
-            break;
-          }
-          if (c.getCity().equalsIgnoreCase(city)) {
-            if (mode == 1) {
-              c.setCount(c.getCount() + 1);
-              found = true;
-              break;
-            }
-            if (c.getPostal().equalsIgnoreCase(postal)) {
-              c.setCount(c.getCount() + 1);
-              found = true;
-              break;
-            }
-          }
-        }
-      }
-      if (!found) {
-        if (mode == 0)
-          countries.add(new CCPcounter(country));
-        if (mode == 1)
-          countries.add(new CCPcounter(country, city));
-        if (mode == 2)
-          countries.add(new CCPcounter(country, city, postal));
-      }
-    }
-
-    for (CCPcounter c : countries) {
-      System.out.println(c);
+      System.out.println(rs.getString("sin") + ", " + rs.getString("country") + ", " + rs.getString("city") + ", "
+          + rs.getInt("count") + ", " + rs.getInt("total"));
     }
   }
-}
 
-class CCPcounter {
-  private String country, city, postal;
-  private int count;
+  public static void reportDateRangeByCity() throws ClassNotFoundException, SQLException {
 
-  public CCPcounter(String country, String city, String postal) {
-    this.country = country;
-    this.city = city;
-    this.postal = postal;
-    this.count = 1;
   }
 
-  public CCPcounter(String country, String city) {
-    this.country = country;
-    this.city = city;
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportMorethan10percent() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().morethan10percent();
+    System.out.println("Sin, country, city");
+    while (rs.next()) {
+      System.out.println(rs.getString("sin") + ", " + rs.getString("country") + ", " + rs.getString("city"));
+    }
   }
 
-  public CCPcounter(String country) {
-    this.country = country;
-    this.city = "NULL";
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportRankHostByListingCountryCity() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingByHostAndCities();
+    System.out.println("Country, city, sin: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ", "
+          + rs.getString("sin") + ", " + rs.getInt("count"));
+    }
   }
 
-  public CCPcounter() {
-    this.country = "NULL";
-    this.city = "NULL";
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportRankHostsByListingCountry() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingByHostAndCountry();
+    System.out.println("Country, sin: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("sin") + ": " + rs.getInt("count"));
+    }
   }
 
-  public String getCountry() {
-    return country;
+  public static void reportTotalListingByCCP() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingInPostals();
+    System.out.println("Country, city, postal: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ", " + rs.getString("postal_code")
+          + ": " + rs.getInt("count"));
+    }
   }
 
-  public void setCountry(String country) {
-    this.country = country;
+  public static void reportTotalListingByCountryCity() throws SQLException, ClassNotFoundException {
+    ResultSet rs = SqlDAO.getInstance().countListingInCities();
+    System.out.println("Country, city: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ": " + rs.getInt("count"));
+    }
   }
 
-  public String getCity() {
-    return city;
-  }
-
-  public void setCity(String city) {
-    this.city = city;
-  }
-
-  public String getPostal() {
-    return postal;
-  }
-
-  public void setPostal(String postal) {
-    this.postal = postal;
-  }
-
-  public int getCount() {
-    return count;
-  }
-
-  public void setCount(int count) {
-    this.count = count;
-  }
-
-  @Override
-  public String toString() {
-    if (city.equals("NULL") && postal.equals("NULL"))
-      return "[" + country + ", " + count + "]";
-    if (postal.equals("NULL"))
-      return "[" + country + ", " + city + ", " + count + "]";
-    return "[" + country + ", " + city + ", " + postal + ", " + count + "]";
+  public static void reportTotalListingByCountry()
+      throws SQLException, ClassNotFoundException {
+    ResultSet rs = SqlDAO.getInstance().countListingInCountries();
+    System.out.println("Country: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ": " + rs.getInt("count"));
+    }
   }
 }

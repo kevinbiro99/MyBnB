@@ -83,13 +83,29 @@ INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VAL
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 49.249782, -123.089642, 'V5V 4E4', 'Vancouver', 'Canada');
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 39.955173, -75.160046, '19107', 'Philadelphia', 'USA');
 INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 0, 0, '12345', 'I made it up', 'Atlantic Ocean');
+--No hosts, used to test 10% report
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('House', 43.651070, -79.347015, 'M5V 2M4', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.655485, -79.383598, 'M4Y 1Z3', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Guest House', 43.665318, -79.396555, 'M5T 1G8', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Hotel', 43.660919, -79.385694, 'M5B 1V8', 'Toronto', 'Canada');
+INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES ('Apartment', 43.649988, -79.372685, 'M5V 3V9', 'Toronto', 'Canada');
 
 -- Populate Hosts of above listings
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 1);
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 2);
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 3);
 INSERT INTO Hosts (sin, listing_id) VALUES (12345, 4);
-INSERT INTO Hosts (sin, listing_id) VALUES (12345, 5);
+INSERT INTO Hosts (sin, listing_id) VALUES (123456789, 5);
+INSERT INTO Hosts (sin, listing_id) VALUES (123456789, 6);
+INSERT INTO Hosts (sin, listing_id) VALUES (987654321, 9);
+INSERT INTO Hosts (sin, listing_id) VALUES (987654321, 8);
+INSERT INTO Hosts (sin, listing_id) VALUES (135792468, 10);
+INSERT INTO Hosts (sin, listing_id) VALUES (864209753, 7);
+INSERT INTO Hosts (sin, listing_id) VALUES (246813579, 11);
+INSERT INTO Hosts (sin, listing_id) VALUES (246813579, 12);
+INSERT INTO Hosts (sin, listing_id) VALUES (864209753, 13);
+INSERT INTO Hosts (sin, listing_id) VALUES (123456789, 14);
+INSERT INTO Hosts (sin, listing_id) VALUES (135792468, 15);
 
 -- Populate Availabilities of above listings
 INSERT INTO Availabilities (listing_id, cost, start, end) VALUES (1, 100.00, '2023-07-30', '2023-07-30'), (1, 100.00, '2023-08-20', '2023-08-25'), (1, 90.00, '2023-09-05', '2023-09-15'), (1, 80.00, '2023-10-01', '2023-10-10'), (1, 100.00, '2023-11-05', '2023-11-15'), (1, 110.00, '2023-12-01', '2023-12-20');
