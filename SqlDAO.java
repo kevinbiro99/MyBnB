@@ -14,8 +14,8 @@ public class SqlDAO {
 	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
-    // final String USER = "sqluser"; // Laptop
-    final String USER = "root"; // Desktop
+    final String USER = "sqluser"; // Laptop
+    // final String USER = "root"; // Desktop
     final String PASS = "password";
     
     // SQL connection session
@@ -158,6 +158,7 @@ public class SqlDAO {
         if (resultSet.next()) {
             exists = true;
         }
+        resultSet.close();
         
         return exists;
     }
@@ -172,6 +173,7 @@ public class SqlDAO {
         if (resultSet.next()) {
             exists = true;
         }
+        resultSet.close();
         
         return exists;
     }
@@ -294,7 +296,9 @@ public class SqlDAO {
         query = String.format(query, listing_id);
         ResultSet rs = stmt.executeQuery(query);
         rs.next();
-        return rs.getBoolean("is_booked");
+        boolean b = rs.getBoolean("is_booked");
+        rs.close();
+        return b;
     }
 
     public void removeListing(int listing_id) throws SQLException {
@@ -335,7 +339,9 @@ public class SqlDAO {
         query = String.format(query, sin, sin);
         ResultSet rs = stmt.executeQuery(query);
         rs.next();
-        return rs.getBoolean("has_listings_or_bookings");
+        boolean b = rs.getBoolean("has_listings_or_bookings");
+        rs.close();
+        return b;
     }
 
     public ResultSet getUsersAndHostsFromCompletedRentals(int sin) throws SQLException {
@@ -380,6 +386,44 @@ public class SqlDAO {
     }
 
     public ResultSet executeQuery(String query) throws SQLException{
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getListingsInRadius(double radius, double lat, double lon, String type) throws SQLException {
+        String query = "SELECT * FROM listings WHERE type = \'%s\' and (6371 * 2 * ASIN(SQRT(POWER(SIN((RADIANS(\'%f\') - RADIANS(latitude)) / 2), 2) + COS(RADIANS(\'%f\')) * COS(RADIANS(latitude)) * POWER(SIN((RADIANS(\'%f\') - RADIANS(longitude)) / 2), 2)))) <= \'%f\';";
+        query = String.format(query, type, lat, lat, lon, radius);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getRecommendedAmenitiesInRangeSortedDesc(double radius, double lat, double lon, String type) throws SQLException {
+        String query = "SELECT o.amenity, COUNT(*) AS amenity_count FROM Offerings o INNER JOIN Listings l ON o.listing_id = l.listing_id WHERE type = \'%s\' and (6371 * 2 * ASIN(SQRT(POWER(SIN((RADIANS(\'%f\') - RADIANS(l.latitude)) / 2), 2) + COS(RADIANS(\'%f\')) * COS(RADIANS(l.latitude)) * POWER(SIN((RADIANS(\'%f\') - RADIANS(l.longitude)) / 2), 2)))) <= \'%f\' GROUP BY o.amenity ORDER BY amenity_count DESC;";
+        query = String.format(query, type, lat, lat, lon, radius);
+        return stmt.executeQuery(query);
+    }
+
+    public boolean listingOffersAmenity(int listing_id, String amenity) throws SQLException {
+        String query = "SELECT EXISTS (SELECT 1 FROM Offerings WHERE listing_id = \'%d\' and amenity = \'%s\') AS has_amenity;";
+        query = String.format(query, listing_id, amenity);
+        ResultSet rs = stmt.executeQuery(query);
+        rs.next();
+        boolean b = rs.getBoolean("has_amenity");
+        rs.close();
+        return b;
+    }
+
+    public double averageListingCost(int listing_id) throws SQLException {
+        String query = "SELECT AVG(cost) as avg_cost from availabilities where listing_id = \'%d\';";
+        query = String.format(query, listing_id);
+        ResultSet rs = stmt.executeQuery(query);
+        rs.next();
+        double b = rs.getDouble("avg_cost");
+        rs.close();
+        return b;
+    }
+
+    public ResultSet getListingAmenities(int listing_id) throws SQLException {
+        String query = "select * from offerings where listing_id = \'%d\'";
+        query = String.format(query, listing_id);
         return stmt.executeQuery(query);
     }
 }

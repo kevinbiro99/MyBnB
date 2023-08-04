@@ -68,6 +68,8 @@ public class Listing {
     System.out.print("Enter your country: ");
     String country = scanner.nextLine();
 
+    HostToolkit.suggestAmenities(lat, lon, type);
+
     boolean done = false;
     HashSet<String> amenities = new HashSet<String>(); // no duplicates
     while (!done) {
@@ -84,6 +86,8 @@ public class Listing {
         System.out.println("This amenity does not exist");
       }
     }
+
+    System.out.println("The average price per day in this area for type: " + type + " is: " + HostToolkit.estimatePriceInArea(lat, lon, type));
 
     done = false;
     // dont want duplicate date entries
@@ -921,6 +925,8 @@ public class Listing {
         return;
     }
 
+    showListingAmenities(listing);
+
     // User enters availability indices they want to book
     boolean done = false;
     while (!done) {
@@ -1038,6 +1044,25 @@ public class Listing {
 
     System.out.println("Listing with id: " + listing + " was removed");
     return;
+  }
+
+  public static void showListingAmenities(int listing_id) throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().getListingAmenities(listing_id);
+    System.out.println("\nThis listing has the following amenities:\n");
+    int index = 0;
+    // Extract data from result set
+    while (rs.next()) {
+      // Retrieve by column name
+      String amenity = rs.getString("amenity");
+      // Display values
+      System.out.format("%-30s", amenity);
+      index++;
+      if (index % 4 == 0) {
+        System.out.println();
+      }
+    }
+    System.out.println();
+    rs.close();
   }
 
 }

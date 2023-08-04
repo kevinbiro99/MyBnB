@@ -19,7 +19,7 @@ public class MyBnB {
 
     scanner = new Scanner(System.in);  // Create a Scanner object
     functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show", 
-              "user/review", "user/seereview", "listing/search", "listing/search/dist", "listing/book", "bookings/show", "bookings/completestay", 
+              "user/review", "user/seereview", "listing/search", "listing/book", "bookings/show", "bookings/completestay", 
               "bookings/cancel", "listing/create", "listing/remove", "listing/update",
               "listing/review", "listing/seereview", "reports", "exit"));
     
