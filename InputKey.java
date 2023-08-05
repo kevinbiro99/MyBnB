@@ -1,7 +1,6 @@
 public class InputKey {
   private String key;
   private String description;
-  private String details;
   private boolean isPressed;
   private int id;
 

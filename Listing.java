@@ -18,7 +18,15 @@ public class Listing {
   private static double defaultDistance = 10;
 
   /*
-   * Need to change postal code filterign to also account for city and country
+   * Assumptions:
+   * -Postal codes are only unique within a country
+   * -Having similar postal codes, say sharing all but last character, means the
+   * addresses are adjacent
+   */
+
+  /*
+   * Still need:
+   * -change postal code filterign to also account for country, did I do this?
    */
 
   /*
@@ -245,9 +253,6 @@ public class Listing {
     sortings.add(new InputKey("3", "ascending cost"));
     sortings.add(new InputKey("4", "descending cost"));
 
-    // Filters can stack, sorting methods cannot
-    // Filter: by amenities, by exact address [a, e]
-    // Sort: distance, price
     ArrayList<ListingObject> listings = getListingSet();
     getNextAvailableCost(listings);
 
@@ -299,6 +304,11 @@ public class Listing {
             break;
           case "amenities":
             listings = filterByAmenities(scanner, listings);
+            break;
+          case "exact address":
+            listings = filterByCountry(scanner, listings);
+            listings = filterByCity(scanner, listings);
+            listings = filterByExactPostal(scanner, listings);
           default:
             System.out.println("Invalid operation");
         }
@@ -350,6 +360,19 @@ public class Listing {
     }
   }
 
+  public static ArrayList<ListingObject> filterByExactPostal(Scanner scanner, ArrayList<ListingObject> listings)
+      throws SQLException, ClassNotFoundException {
+    System.out.print("Enter postal code: ");
+    String input = scanner.nextLine();
+
+    ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
+    for (ListingObject listing : listings) {
+      if (listing.getPos().equalsIgnoreCase(input))
+        filtered.add(listing);
+    }
+    return filtered;
+  }
+
   public static ArrayList<ListingObject> filterByAmenities(Scanner scanner, ArrayList<ListingObject> listings)
       throws ClassNotFoundException, SQLException {
     HashSet<String> amenities = new HashSet<String>(); // no duplicates
@@ -384,7 +407,7 @@ public class Listing {
     }
     return null;
   }
-  
+
   /*
    * I should check if each listing has all those info using daos
    */
@@ -673,13 +696,16 @@ public class Listing {
    */
   public static ArrayList<ListingObject> filterByPostal(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
+    System.out.print("Enter country: ");
+    String country = scanner.nextLine();
+
     System.out.print("Enter postal code: ");
     String input = scanner.nextLine();
-    String fsa = input.substring(0, 3).toUpperCase();
+    String fsa = input.substring(0, input.length() - 1).toUpperCase();
 
     ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
     for (ListingObject listing : listings) {
-      if (listing.getPos().contains(fsa))
+      if (listing.getCountry().equalsIgnoreCase(country) && listing.getPos().contains(fsa))
         filtered.add(listing);
     }
     return filtered;
@@ -858,30 +884,31 @@ public class Listing {
   /*
    * Returns a list of available indices
    */
-  public static ArrayList<ArrayList<String>> displayListingAvailabilities(int listing_id) throws ClassNotFoundException, SQLException {
+  public static ArrayList<ArrayList<String>> displayListingAvailabilities(int listing_id)
+      throws ClassNotFoundException, SQLException {
     System.out.println();
     ResultSet rs = SqlDAO.getInstance().getAvailabilitiesFromListing(listing_id);
     System.out.println("Availabilities for listing_id " + listing_id + ": ");
     int index = 0;
     ArrayList<ArrayList<String>> availabilities = new ArrayList<ArrayList<String>>();
     // Extract data from result set
-    while(rs.next()){
-      //Retrieve by column name
+    while (rs.next()) {
+      // Retrieve by column name
       ArrayList<String> a = new ArrayList<String>();
       String start = rs.getString("start");
       String end = rs.getString("end");
       double cost = rs.getDouble("cost");
       boolean available = rs.getBoolean("availability");
-      a.add(""+index);
+      a.add("" + index);
       a.add(start);
       a.add(end);
       // Array list maintains insertion order so we will use this to retrieve index
-      if(available) {
+      if (available) {
         availabilities.add(a);
       }
-      //Display values
+      // Display values
       System.out.format(index + ": (%-50s", start + ", " + end + ", $" + cost + ", Booked: " + !available + ")");
-      index ++;
+      index++;
       if (index % 3 == 0) {
         System.out.println();
       }
@@ -895,7 +922,7 @@ public class Listing {
     System.out.println("Enter your SIN: ");
     int sin = scanner.nextInt();
     scanner.nextLine();
-    if (!SqlDAO.getInstance().checkUserExists(sin)){
+    if (!SqlDAO.getInstance().checkUserExists(sin)) {
       System.out.println("INVALID USER SIN");
       return;
     }
@@ -911,14 +938,14 @@ public class Listing {
       System.out.println("There are no listings available");
       return;
     }
-    
+
     // User selects listing they want to book by id
     System.out.println("Select the listing to book (by id): ");
     int listing = scanner.nextInt();
     scanner.nextLine();
     if (!listings.contains(listing)) {
-        System.out.println("This listing id: " + listing + " does not exist");
-        return;
+      System.out.println("This listing id: " + listing + " does not exist");
+      return;
     }
 
     // User enters availability indices they want to book
@@ -936,9 +963,9 @@ public class Listing {
       System.out.print("Enter an availability index: ");
       int idx = scanner.nextInt();
       scanner.nextLine();
-      
-      for(ArrayList<String> a : availabilities) {
-        if (a.get(0).equals(""+idx)) {
+
+      for (ArrayList<String> a : availabilities) {
+        if (a.get(0).equals("" + idx)) {
           invalid = false;
           availability = a;
         }
@@ -954,7 +981,7 @@ public class Listing {
 
         // Save booking
         SqlDAO.getInstance().bookListing(listing, sin, availability.get(1), availability.get(2), card);
-        
+
         // Give chance to stop booking:
         System.out.println("Do you want to continue booking dates? (c) or quit? (q): ");
         String choice = scanner.nextLine();
@@ -978,16 +1005,16 @@ public class Listing {
     int index = 0;
     ArrayList<Integer> listingIds = new ArrayList<Integer>();
     // Extract data from result set
-    while(rs.next()){
-      //Retrieve by column name
+    while (rs.next()) {
+      // Retrieve by column name
       int listing = rs.getInt("listing_id");
       String type = rs.getString("type");
       String city = rs.getString("city");
       String country = rs.getString("country");
       listingIds.add(listing);
-      //Display values
+      // Display values
       System.out.format("(id: %s, type: %s, city: %s, country: %s) %-5s", listing, type, city, country, "");
-      index ++;
+      index++;
       if (index % 2 == 0) {
         System.out.println();
       }
@@ -999,20 +1026,21 @@ public class Listing {
   }
 
   /*
-   * You can only remove a listing if it has no bookings or if the booked availabilities are complete
+   * You can only remove a listing if it has no bookings or if the booked
+   * availabilities are complete
    */
   public static void removeListing(Scanner scanner) throws ClassNotFoundException, SQLException {
     System.out.println("Enter your SIN: ");
     int sin = scanner.nextInt();
     scanner.nextLine();
-    if (!SqlDAO.getInstance().checkUserExists(sin)){
+    if (!SqlDAO.getInstance().checkUserExists(sin)) {
       System.out.println("INVALID USER SIN");
       return;
     }
 
     // display listings for this user:
     ArrayList<Integer> listings = displayUserListings(sin);
-    if(listings.isEmpty()) {
+    if (listings.isEmpty()) {
       System.out.println("You don't have any listings to remove");
       return;
     }

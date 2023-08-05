@@ -5,6 +5,10 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+/*
+ * PreparedStatement statement for queries that relies on input?
+ */
+
 /**
  * Handles interaction with the SQL database. Contains the connection and
  * queries that
@@ -413,6 +417,49 @@ public class SqlDAO {
         String countListingOverallInCity = "(SELECT country, city, count(*) as total FROM listings GROUP BY country, city)";
         String query = "SELECT a.sin, a.country, a.city, a.count, b.total FROM (%s as a NATURAL JOIN %s as b) WHERE (a.count * 10 > b.total)";
         query = String.format(query, countSinListingsInCity, countListingOverallInCity);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countBookingInDateRangeByCity(String start, String end) throws SQLException{
+        String filterBookingAttributes = "(SELECT listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\'))";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String filterListingAttributes = "(SELECT listing_id, city FROM listings)";
+        String query = "SELECT b.city, count(*) as count FROM (%s as a NATURAL JOIN %s as b) GROUP BY b.city";
+        query = String.format(query, filterBookingAttributes, filterListingAttributes);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countBookingInDateRangeByPostal(String start, String end, String city) throws SQLException{
+        String filterBookingAttributes = "(SELECT listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\'))";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String filterListingAttributes = "(SELECT listing_id, postal_code FROM listings WHERE city = \'%s\')";
+        filterListingAttributes = String.format(filterListingAttributes, city);
+        String query = "SELECT b.postal_code, count(*) as count FROM (%s as a NATURAL JOIN %s as b) GROUP BY b.postal_code";
+        query = String.format(query, filterBookingAttributes, filterListingAttributes);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByBookingInDateRange(String start, String end) throws SQLException{
+        String query = "SELECT sin, count(*) as count FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\') GROUP BY sin ORDER BY count DESC";
+        query = String.format(query, start, end);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByBookingInDateRangeAndCity(String start, String end, String year) throws SQLException{
+        String filterAtLeastTwo = "SELECT sin, count(*) as occurences FROM bookings WHERE start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\' GROUP BY sin";
+        String filterBookingAttributes = "SELECT sin, listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\') GROUP BY sin, listing_id";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String query = "SELECT b.sin, count(*) as count, c.city FROM (("+filterAtLeastTwo+") as a NATURAL JOIN ("+filterBookingAttributes+") as b NATURAL JOIN listings as c) WHERE a.occurences > 1 GROUP BY sin, city ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankHostByCancellations(String year) throws SQLException{
+        String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = host_sin AND (start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\') GROUP BY canceller_sin ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByCancellations(String year) throws SQLException{
+        String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = sin AND (start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\') GROUP BY canceller_sin ORDER BY count DESC";
         return stmt.executeQuery(query);
     }
 }
