@@ -18,18 +18,6 @@ public class Listing {
   private static double defaultDistance = 10;
 
   /*
-   * Assumptions:
-   * -Postal codes are only unique within a country
-   * -Having similar postal codes, say sharing all but last character, means the
-   * addresses are adjacent
-   */
-
-  /*
-   * Still need:
-   * -change postal code filterign to also account for country, did I do this?
-   */
-
-  /*
    * int sin, String type, double lat, double lon, String postalcode, String city,
    * String country, ArrayList<String> amenities, ArrayList<DateCost>
    * availabilityList
@@ -705,7 +693,7 @@ public class Listing {
 
     ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
     for (ListingObject listing : listings) {
-      if (listing.getCountry().equalsIgnoreCase(country) && listing.getPos().contains(fsa))
+      if (listing.getCountry().equalsIgnoreCase(country) && listing.getPos().toUpperCase().startsWith(fsa))
         filtered.add(listing);
     }
     return filtered;

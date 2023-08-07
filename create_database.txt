@@ -141,3 +141,8 @@ INSERT INTO Cancelled (canceller_sin, sin, host_sin, listing_id, start, end, car
 INSERT INTO Cancelled (canceller_sin, sin, host_sin, listing_id, start, end, card) VALUES (12345, 123456789, 12345, 1, '2023-08-02', '2023-08-05', 1234567890);
 INSERT INTO Cancelled (canceller_sin, sin, host_sin, listing_id, start, end, card) VALUES (12345, 12345, 135792468, 15, '2023-08-02', '2023-08-05', 1234567890);
 INSERT INTO Cancelled (canceller_sin, sin, host_sin, listing_id, start, end, card) VALUES (12345, 12345, 135792468, 10, '2023-08-02', '2023-08-05', 1234567890);
+
+
+-- Populate Listing_Review of above listings
+INSERT INTO Listing_Review (listing_id, poster_sin, comment, rating) VALUES (1, 123456789, "Honestly, it was a beautiful cabin and the host clearly put effort into making it a nice and easy stay for us. There a delay in communication but it was mentioned before hand that the host would be busy for a set amount of hours on that specific day.", 5);
+INSERT INTO Listing_Review (listing_id, poster_sin, comment, rating) VALUES (2, 135792468, "This is a fabulous place!! I am a member of Devils Glen ski club and had my family up for a weekend of skiing. This place is close to the hill, beautiful and very private. Definitely will rent again. Thank you.", 5);

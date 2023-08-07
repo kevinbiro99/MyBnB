@@ -4,51 +4,34 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Report {
   public static void report(Scanner scanner) throws ClassNotFoundException, SQLException {
     String input = "";
 
-    /*
-     * "This is a query that identifies the possible commercial hosts, something
-     * that
-     * the system should flag and prohibit"
-     * 
-     * What do we actually do about this, prevent making more listings? warning? ban
-     * user?
-     * 
-     * Still need:
-     * -We would like to run a report that presents for each listing the set
-     * of most popular noun phrases associated with the listing
-     */
-
-
-    /*
-     * reportDateRangeByCity
-     * reportDateRangeByCityAndPostal
-     * reportTotalListingByCountry
-     * reportTotalListingByCountryCity
-     * reportTotalListingByCCP
-     * reportRankHostsByListingCountry
-     * reportRankHostByListingCountryCity
-     * reportMorethan10percent
-     * reportRankRenterByBookings
-     * reportRankRenterByBookingInDateRangeAndCity
-     * reportLargestCancellationsInYear
-     */
     ArrayList<InputKey> options = new ArrayList<InputKey>();
     options.add(new InputKey(1, "1", "the total number of bookings in a specific date range by city"));
     options.add(new InputKey(2, "2", "the total number of bookings in a specific date range by city and zip code"));
     options.add(new InputKey(3, "3", "the total number of listings per country"));
     options.add(new InputKey(4, "4", "the total number of listings per country and city"));
     options.add(new InputKey(5, "5", "the total number of listings per country, city, and postal code"));
-    options.add(new InputKey(6, "6", "the rank of hosts by the total number of listings they have overall per country"));
-    options.add(new InputKey(7, "7", "the rank of hosts by the total number of listings they have overall per country and city"));
+    options
+        .add(new InputKey(6, "6", "the rank of hosts by the total number of listings they have overall per country"));
+    options.add(new InputKey(7, "7",
+        "the rank of hosts by the total number of listings they have overall per country and city"));
     options.add(new InputKey(8, "8", "the hosts that have more than 10% of listings in a country and city"));
     options.add(new InputKey(9, "9", "the rank of renters by the number of bookings in a given time period"));
-    options.add(new InputKey(10, "10", "the rank of renters by the number of bookings in a given time period per city"));
+    options
+        .add(new InputKey(10, "10", "the rank of renters by the number of bookings in a given time period per city"));
     options.add(new InputKey(11, "11", "the hosts and renters with the largest number of cancellations within a year"));
+    options.add(new InputKey(12, "12", "the word frequency of a listing review for all listings"));
 
     while (!input.equals("q")) {
       int selected = -1;
@@ -64,6 +47,8 @@ public class Report {
 
       System.out.println();
       switch (selected) {
+        case -1:
+          break;
         case 1:
           reportDateRangeByCity(scanner);
           break;
@@ -97,6 +82,9 @@ public class Report {
         case 11:
           reportLargestCancellationsInYear(scanner);
           break;
+        case 12:
+          reportWordFrequency();
+          break;
         default:
           System.out.println();
           System.out.println("Invalid operation");
@@ -105,7 +93,38 @@ public class Report {
     }
   }
 
-  public static void myTestFunction(Scanner scanner) throws ClassNotFoundException, SQLException {
+  public static void reportWordFrequency() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().getAllListingReview();
+
+    while (rs.next()) {
+      List<String> original = Arrays.asList(rs.getString("comment").split("\\s+"));
+      Set<String> temp = new HashSet<>(original);
+      List<String> words = new ArrayList<>(temp);
+
+      if (words == null || words.isEmpty()) {
+        continue;
+      }
+
+      Collections.sort(words, new Comparator<String>() {
+        @Override
+        public int compare(String w1, String w2) {
+          int f1 = Collections.frequency(original, w1);
+          int f2 = Collections.frequency(original, w2);
+          if (f1 > f2)
+            return -1;
+          if (f1 == f2)
+            return 0;
+          return 1;
+        }
+      });
+
+      System.out.println("For listing with id: " + rs.getInt("listing_id"));
+      System.out.println("Word: [frequency]");
+      for (String word : words) {
+        System.out.println(word + ": " + Collections.frequency(original, word));
+      }
+      System.out.println();
+    }
 
   }
 

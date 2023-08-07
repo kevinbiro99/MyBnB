@@ -462,4 +462,9 @@ public class SqlDAO {
         String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = sin AND (start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\') GROUP BY canceller_sin ORDER BY count DESC";
         return stmt.executeQuery(query);
     }
+
+    public ResultSet getAllListingReview() throws SQLException{
+        String query = "SELECT listing_id, comment FROM Listing_Review";
+        return stmt.executeQuery(query);
+    }
 }
