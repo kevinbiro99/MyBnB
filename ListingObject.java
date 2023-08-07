@@ -24,6 +24,10 @@ public class ListingObject {
       costString = "Unknown";
     if (dist < 0)
       distString = "Unknown";
+    if (startDate == null)
+      startDate = "Unknown";
+    if (endDate == null)
+      endDate = "Unknown";
     return String.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s", distString,
         costString, startDate, endDate, type, city, pos, country, lat, lon);
     // return "[dist=" + distString + ", lat=" + lat + ", lon=" + lon + ", cost=" +

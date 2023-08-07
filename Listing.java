@@ -83,7 +83,8 @@ public class Listing {
       }
     }
 
-    System.out.println("The average price per day in this area for type: " + type + " is: " + HostToolkit.estimatePriceInArea(lat, lon, type));
+    System.out.println("The average price per day in this area for type: " + type + " is: "
+        + HostToolkit.estimatePriceInArea(lat, lon, type));
 
     done = false;
     // dont want duplicate date entries
@@ -110,7 +111,7 @@ public class Listing {
         endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
       } catch (DateTimeParseException e) {
         System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
-        invalid = true;
+        continue;
       }
 
       // check for overlapping / duplicate date entries
@@ -220,6 +221,8 @@ public class Listing {
   public static void printListingSet(ArrayList<ListingObject> listings) {
     System.out.format("%1$-10s%2$-10s%3$-15s%4$-15s%5$-15s%6$-15s%7$-15s%8$-15s%9$-15s%10$-15s\n",
         "Distance", "Cost", "Start", "End", "Type", "City", "Postal code", "Country", "Latitude", "Longitude");
+    if (listings == null)
+      return;
     for (ListingObject listing : listings) {
       System.out.println(listing.toString());
     }
@@ -354,6 +357,8 @@ public class Listing {
 
   public static ArrayList<ListingObject> filterByExactPostal(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
+    if (listings == null)
+      return null;
     System.out.print("Enter postal code: ");
     String input = scanner.nextLine();
 
@@ -367,6 +372,8 @@ public class Listing {
 
   public static ArrayList<ListingObject> filterByAmenities(Scanner scanner, ArrayList<ListingObject> listings)
       throws ClassNotFoundException, SQLException {
+    if (listings == null)
+      return null;
     HashSet<String> amenities = new HashSet<String>(); // no duplicates
     int index = 0;
     while (true) {
@@ -400,12 +407,10 @@ public class Listing {
     return null;
   }
 
-  /*
-   * I should check if each listing has all those info using daos
-   */
-
   public static ArrayList<ListingObject> filterByAvailability(Scanner scanner, ArrayList<ListingObject> listings)
       throws ClassNotFoundException, SQLException {
+    if (listings == null)
+      return null;
     LocalDate startDate, endDate;
     while (true) {
       System.out.print("Enter the start date of the range (YYYY-MM-DD): ");
@@ -439,6 +444,8 @@ public class Listing {
 
   public static void getAvailabilitiesByRange(ArrayList<ListingObject> listings, String start, String end)
       throws ClassNotFoundException, SQLException {
+    if (listings == null)
+      return;
     SqlDAO dao = SqlDAO.getInstance();
     ResultSet rs;
     String startDate, endDate;
@@ -454,6 +461,7 @@ public class Listing {
         endDate = rs.getString("end");
         cost = rs.getDouble("cost");
       }
+      rs.close();
       listing.setCost(cost);
       listing.setStartDate(startDate);
       listing.setEndDate(endDate);
@@ -461,6 +469,8 @@ public class Listing {
   }
 
   public static ArrayList<ListingObject> filterByPriceRange(Scanner scanner, ArrayList<ListingObject> listings) {
+    if (listings == null)
+      return null;
     System.out.print("Enter min price: ");
     double min = scanner.nextDouble();
     scanner.nextLine();
@@ -478,6 +488,8 @@ public class Listing {
   }
 
   public static ArrayList<ListingObject> filterByType(Scanner scanner, ArrayList<ListingObject> listings) {
+    if (listings == null)
+      return null;
     System.out.print("Enter listing type " + listingTypes + ": ");
     String input = scanner.nextLine();
 
@@ -490,6 +502,8 @@ public class Listing {
   }
 
   public static ArrayList<ListingObject> filterByCity(Scanner scanner, ArrayList<ListingObject> listings) {
+    if (listings == null)
+      return null;
     System.out.print("Enter listing city: ");
     String input = scanner.nextLine();
 
@@ -502,6 +516,8 @@ public class Listing {
   }
 
   public static ArrayList<ListingObject> filterByCountry(Scanner scanner, ArrayList<ListingObject> listings) {
+    if (listings == null)
+      return null;
     System.out.print("Enter listing country: ");
     String input = scanner.nextLine();
 
@@ -519,6 +535,8 @@ public class Listing {
    */
   public static void getDistance(Scanner scanner, ArrayList<ListingObject> listings)
       throws ClassNotFoundException, SQLException {
+    if (listings == null)
+      return;
     System.out.print("Enter the latitude: ");
     double lat = scanner.nextDouble();
     scanner.nextLine();
@@ -539,6 +557,8 @@ public class Listing {
    * any listing farther than distance is removed
    */
   public static ArrayList<ListingObject> filterByDist(Scanner scanner, ArrayList<ListingObject> listings) {
+    if (listings == null)
+      return null;
     System.out.print("Enter distance(km): ");
     String input = scanner.nextLine();
 
@@ -599,6 +619,8 @@ public class Listing {
   public static void getCost(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
     // Ask user for a date
+    if (listings == null)
+      return;
     System.out.print("\nEnter a date(YYYY-MM-DD): ");
     String input = scanner.nextLine();
     Date date;
@@ -616,6 +638,8 @@ public class Listing {
    */
   public static void getCostOfDate(ArrayList<ListingObject> listings, Date date)
       throws SQLException, ClassNotFoundException {
+    if (listings == null)
+      return;
     SqlDAO dao = SqlDAO.getInstance();
     ResultSet rs;
     double cost;
@@ -633,6 +657,8 @@ public class Listing {
 
   public static void getNextAvailableCost(ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
+    if (listings == null)
+      return;
     SqlDAO dao = SqlDAO.getInstance();
     ResultSet rs;
 
@@ -643,6 +669,7 @@ public class Listing {
         listing.setStartDate(rs.getString("start"));
         listing.setEndDate(rs.getString("end"));
       }
+      rs.close();
     }
   }
 
@@ -688,6 +715,8 @@ public class Listing {
    */
   public static ArrayList<ListingObject> filterByPostal(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {
+    if (listings == null)
+      return null;
     System.out.print("Enter country: ");
     String country = scanner.nextLine();
 

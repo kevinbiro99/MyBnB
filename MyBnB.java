@@ -17,13 +17,14 @@ public class MyBnB {
 
     SqlDAO.getInstance().createDatabase("create_database.txt");
 
-    scanner = new Scanner(System.in);  // Create a Scanner object
-    functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show", 
-              "user/review", "user/seereview", "listing/search", "listing/book", "bookings/show", "bookings/completestay", 
-              "bookings/cancel", "listing/create", "listing/remove", "listing/update",
-              "listing/review", "listing/seereview", "reports", "exit"));
-    
-    while(handle(selectFunction()));
+    scanner = new Scanner(System.in); // Create a Scanner object
+    functions = new ArrayList<>(Arrays.asList("user/create", "user/delete", "user/show",
+        "user/review", "user/seereview", "listing/search", "listing/book", "bookings/show", "bookings/completestay",
+        "bookings/cancel", "listing/create", "listing/remove", "listing/update",
+        "listing/review", "listing/seereview", "reports", "exit"));
+
+    while (handle(selectFunction()))
+      ;
 
     scanner.close();
     SqlDAO.deleteInstance();
@@ -96,7 +97,7 @@ public class MyBnB {
     int index = 0;
     for (String f : functions) {
       System.out.format("%-25s", f);
-      index ++;
+      index++;
       if (index % 4 == 0) {
         System.out.println();
       }
