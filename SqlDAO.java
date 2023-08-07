@@ -5,19 +5,24 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+/*
+ * PreparedStatement statement for queries that relies on input?
+ */
+
 /**
- * Handles interaction with the SQL database. Contains the connection and queries that
+ * Handles interaction with the SQL database. Contains the connection and
+ * queries that
  * interact with the database.
  */
 public class SqlDAO {
     private static final String dbClassName = "com.mysql.cj.jdbc.Driver";
-	private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
+    private static final String CONNECTION = "jdbc:mysql://127.0.0.1/mybnb";
 
     //Database credentials
     final String USER = "sqluser"; // Laptop
     // final String USER = "root"; // Desktop
     final String PASS = "password";
-    
+
     // SQL connection session
     public static Connection conn;
     public static Statement stmt;
@@ -31,7 +36,8 @@ public class SqlDAO {
     }
 
     public static void deleteInstance() throws SQLException {
-        if (dao == null) return;
+        if (dao == null)
+            return;
         System.out.println("Closing connection...");
         stmt.close();
         conn.close();
@@ -39,25 +45,24 @@ public class SqlDAO {
         System.out.println("Success!");
     }
 
-    private SqlDAO () throws ClassNotFoundException {
-        //Register JDBC driver
-		Class.forName(dbClassName);
-		
-		System.out.println("Connecting to database...");
+    private SqlDAO() throws ClassNotFoundException {
+        // Register JDBC driver
+        Class.forName(dbClassName);
+
+        System.out.println("Connecting to database...");
 
         try {
-			//Establish connection
-			conn = DriverManager.getConnection(CONNECTION,USER,PASS);
+            // Establish connection
+            conn = DriverManager.getConnection(CONNECTION, USER, PASS);
             stmt = conn.createStatement();
-			System.out.println("Successfully connected to MySQL!");
+            System.out.println("Successfully connected to MySQL!");
+        } catch (SQLException e) {
+            System.err.println("Connection error occured!" + e);
         }
-        catch (SQLException e) {
-			System.err.println("Connection error occured!" + e);
-		}
     }
 
     /*
-     * Creates all the tables, constraints, and populates them with data so that 
+     * Creates all the tables, constraints, and populates them with data so that
      * the app can be used.
      */
     public void createDatabase(String fileName) throws IOException, SQLException {
@@ -84,7 +89,8 @@ public class SqlDAO {
     }
 
     // Validate input
-    public void registerUser (int sin, String name, String postal, String city, String country, String dob, String occupation) throws SQLException {
+    public void registerUser(int sin, String name, String postal, String city, String country, String dob,
+            String occupation) throws SQLException {
         String query = "INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES (\'%d\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');";
         query = String.format(query, sin, name, postal, city, country, dob, occupation);
         System.out.println(query);
@@ -110,10 +116,11 @@ public class SqlDAO {
     }
 
     /*
-     * Takes in a list of amenities, listing info, list of days available (stored as ranges for more efficieny)
+     * Takes in a list of amenities, listing info, list of days available (stored as
+     * ranges for more efficieny)
      */
-    public int insertListing (int sin, String type, double lat, double lon, String postalcode, String city, 
-                            String country, HashSet<String> amenities, ArrayList<DateCost> availabilityList) throws SQLException {
+    public int insertListing(int sin, String type, double lat, double lon, String postalcode, String city,
+            String country, HashSet<String> amenities, ArrayList<DateCost> availabilityList) throws SQLException {
         // insert into listing table
         String query = "INSERT INTO Listings (type, latitude, longitude, postal_code, city, country) VALUES (\'%s\',\'%.6f\',\'%.6f\',\'%s\',\'%s\',\'%s\');";
         query = String.format(query, type, lat, lon, postalcode, city, country);
@@ -125,7 +132,7 @@ public class SqlDAO {
         if (affectedRows > 0) {
             // Retrieve the generated keys
             ResultSet generatedKeys = stmt.getGeneratedKeys();
-            
+
             if (generatedKeys.next()) {
                 listingId = generatedKeys.getInt(1);
                 System.out.println("The listing_id of the most recently inserted listing is: " + listingId);
@@ -152,9 +159,9 @@ public class SqlDAO {
         boolean exists = false;
         String query = "SELECT amenity_name FROM Amenities WHERE amenity_name = \'%s\'";
         query = String.format(query, amenity);
-        
+
         ResultSet resultSet = stmt.executeQuery(query);
-            
+
         if (resultSet.next()) {
             exists = true;
         }
@@ -167,9 +174,9 @@ public class SqlDAO {
         boolean exists = false;
         String query = "SELECT sin FROM Users WHERE sin = \'%d\'";
         query = String.format(query, sin);
-        
+
         ResultSet resultSet = stmt.executeQuery(query);
-            
+
         if (resultSet.next()) {
             exists = true;
         }
@@ -178,7 +185,7 @@ public class SqlDAO {
         return exists;
     }
 
-    public void insertOffering (String amenity, int listingId) throws SQLException {
+    public void insertOffering(String amenity, int listingId) throws SQLException {
         String query = "INSERT INTO Offerings (listing_id, amenity) VALUES (\'%d\',\'%s\');";
         query = String.format(query, listingId, amenity);
         System.out.println(query);
@@ -191,15 +198,16 @@ public class SqlDAO {
         return stmt.executeQuery(query);
     }
 
-    public void insertAvailability (int listingId, DateCost dc) throws SQLException {
+    public void insertAvailability(int listingId, DateCost dc) throws SQLException {
         String query = "INSERT INTO Availabilities (listing_id, start, end, cost) VALUES (\'%d\',\'%s\', \'%s\',\'%.2f\');";
         query = String.format(query, listingId, dc.getStartDate(), dc.getEndDate(), dc.getCost());
         System.out.println(query);
         stmt.executeUpdate(query);
-        System.out.println("Availability for: " + listingId + " on range: " + dc.getStartDate() + " - " + dc.getEndDate() + " added to database");
+        System.out.println("Availability for: " + listingId + " on range: " + dc.getStartDate() + " - "
+                + dc.getEndDate() + " added to database");
     }
 
-    public void insertHost (int sin, int listingId) throws SQLException {
+    public void insertHost(int sin, int listingId) throws SQLException {
         String query = "INSERT INTO Hosts (listing_id, sin) VALUES (\'%d\',\'%d\');";
         query = String.format(query, listingId, sin);
         System.out.println(query);
@@ -385,7 +393,84 @@ public class SqlDAO {
         return stmt.executeQuery(query);
     }
 
-    public ResultSet executeQuery(String query) throws SQLException{
+    public ResultSet countListingInCountries() throws SQLException {
+        String query = "SELECT country, count(*) as count FROM listings GROUP BY country ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countListingInCities() throws SQLException {
+        String query = "SELECT country, city, count(*) as count FROM listings GROUP BY country, city ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countListingInPostals() throws SQLException {
+        String query = "SELECT country, city, postal_code, count(*) as count FROM listings GROUP BY country, city, postal_code ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countListingByHostAndCountry() throws SQLException {
+        String query = "SELECT sin, country, count(*) as count FROM hosts NATURAL JOIN listings GROUP BY sin, country ORDER BY country";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countListingByHostAndCities() throws SQLException {
+        String query = "SELECT sin, country, city, count(*) as count FROM hosts NATURAL JOIN listings GROUP BY sin, country, city ORDER BY country, city";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet morethan10percent() throws SQLException {
+        String countSinListingsInCity = "(SELECT sin, country, city, count(*) as count FROM hosts NATURAL JOIN listings GROUP BY sin, country, city)";
+        String countListingOverallInCity = "(SELECT country, city, count(*) as total FROM listings GROUP BY country, city)";
+        String query = "SELECT a.sin, a.country, a.city, a.count, b.total FROM (%s as a NATURAL JOIN %s as b) WHERE (a.count * 10 > b.total)";
+        query = String.format(query, countSinListingsInCity, countListingOverallInCity);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countBookingInDateRangeByCity(String start, String end) throws SQLException{
+        String filterBookingAttributes = "(SELECT listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\'))";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String filterListingAttributes = "(SELECT listing_id, city FROM listings)";
+        String query = "SELECT b.city, count(*) as count FROM (%s as a NATURAL JOIN %s as b) GROUP BY b.city";
+        query = String.format(query, filterBookingAttributes, filterListingAttributes);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet countBookingInDateRangeByPostal(String start, String end, String city) throws SQLException{
+        String filterBookingAttributes = "(SELECT listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\'))";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String filterListingAttributes = "(SELECT listing_id, postal_code FROM listings WHERE city = \'%s\')";
+        filterListingAttributes = String.format(filterListingAttributes, city);
+        String query = "SELECT b.postal_code, count(*) as count FROM (%s as a NATURAL JOIN %s as b) GROUP BY b.postal_code";
+        query = String.format(query, filterBookingAttributes, filterListingAttributes);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByBookingInDateRange(String start, String end) throws SQLException{
+        String query = "SELECT sin, count(*) as count FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\') GROUP BY sin ORDER BY count DESC";
+        query = String.format(query, start, end);
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByBookingInDateRangeAndCity(String start, String end, String year) throws SQLException{
+        String filterAtLeastTwo = "SELECT sin, count(*) as occurences FROM bookings WHERE start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\' GROUP BY sin";
+        String filterBookingAttributes = "SELECT sin, listing_id FROM bookings WHERE (start >= \'%s\' AND end <= \'%s\') GROUP BY sin, listing_id";
+        filterBookingAttributes = String.format(filterBookingAttributes, start, end);
+        String query = "SELECT b.sin, count(*) as count, c.city FROM (("+filterAtLeastTwo+") as a NATURAL JOIN ("+filterBookingAttributes+") as b NATURAL JOIN listings as c) WHERE a.occurences > 1 GROUP BY sin, city ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankHostByCancellations(String year) throws SQLException{
+        String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = host_sin AND (start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\') GROUP BY canceller_sin ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet rankRenterByCancellations(String year) throws SQLException{
+        String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = sin AND (start LIKE \'" + year + "%\' OR end LIKE \'"+ year + "%\') GROUP BY canceller_sin ORDER BY count DESC";
+        return stmt.executeQuery(query);
+    }
+
+    public ResultSet getAllListingReview() throws SQLException{
+        String query = "SELECT listing_id, comment FROM Listing_Review";
         return stmt.executeQuery(query);
     }
 
