@@ -1,19 +1,37 @@
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Scanner;
-
-import com.mysql.cj.protocol.Resultset;
+import java.util.Set;
 
 public class Report {
   public static void report(Scanner scanner) throws ClassNotFoundException, SQLException {
     String input = "";
 
     ArrayList<InputKey> options = new ArrayList<InputKey>();
-    options.add(new InputKey(1, "d", "distance"));
-    options.add(new InputKey(2, "c", "the total number of listings per country"));
-    options.add(new InputKey(3, "cc", "the total number of listings per country and city"));
-    options.add(new InputKey(4, "ccp", "the total number of listings per country, city, and postal code"));
+    options.add(new InputKey(1, "1", "the total number of bookings in a specific date range by city"));
+    options.add(new InputKey(2, "2", "the total number of bookings in a specific date range by city and zip code"));
+    options.add(new InputKey(3, "3", "the total number of listings per country"));
+    options.add(new InputKey(4, "4", "the total number of listings per country and city"));
+    options.add(new InputKey(5, "5", "the total number of listings per country, city, and postal code"));
+    options
+        .add(new InputKey(6, "6", "the rank of hosts by the total number of listings they have overall per country"));
+    options.add(new InputKey(7, "7",
+        "the rank of hosts by the total number of listings they have overall per country and city"));
+    options.add(new InputKey(8, "8", "the hosts that have more than 10% of listings in a country and city"));
+    options.add(new InputKey(9, "9", "the rank of renters by the number of bookings in a given time period"));
+    options
+        .add(new InputKey(10, "10", "the rank of renters by the number of bookings in a given time period per city"));
+    options.add(new InputKey(11, "11", "the hosts and renters with the largest number of cancellations within a year"));
+    options.add(new InputKey(12, "12", "the word frequency of a listing review for all listings"));
 
     while (!input.equals("q")) {
       int selected = -1;
@@ -29,17 +47,43 @@ public class Report {
 
       System.out.println();
       switch (selected) {
+        case -1:
+          break;
         case 1:
           reportDateRangeByCity(scanner);
           break;
         case 2:
-          reportTotalListingByCCP(scanner, 0);
+          reportDateRangeByCityAndPostal(scanner);
           break;
         case 3:
-          reportTotalListingByCCP(scanner, 1);
+          reportTotalListingByCountry();
           break;
         case 4:
-          reportTotalListingByCCP(scanner, 2);
+          reportTotalListingByCountryCity();
+          break;
+        case 5:
+          reportTotalListingByCCP();
+          break;
+        case 6:
+          reportRankHostsByListingCountry();
+          break;
+        case 7:
+          reportRankHostByListingCountryCity();
+          break;
+        case 8:
+          reportMorethan10percent();
+          break;
+        case 9:
+          reportRankRenterByBookings(scanner);
+          break;
+        case 10:
+          reportRankRenterByBookingInDateRangeAndCity(scanner);
+          break;
+        case 11:
+          reportLargestCancellationsInYear(scanner);
+          break;
+        case 12:
+          reportWordFrequency();
           break;
         default:
           System.out.println();
@@ -49,130 +93,220 @@ public class Report {
     }
   }
 
-  public static void reportDateRangeByCity(Scanner scanner) {
-    // Get all city
-    // For each city get all booking,
-  }
-
-  public static void reportTotalListingByCCP(Scanner scanner, int mode)
-      throws SQLException, ClassNotFoundException {
-    ResultSet rs = SqlDAO.getInstance().getAllCCP();
-    ArrayList<CCPcounter> countries = new ArrayList<>();
-    String country, city, postal;
-    boolean found;
+  public static void reportWordFrequency() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().getAllListingReview();
 
     while (rs.next()) {
-      country = rs.getString("country");
-      city = rs.getString("city");
-      postal = rs.getString("postal_code");
-      found = false;
-      for (CCPcounter c : countries) {
-        if (c.getCountry().equalsIgnoreCase(country)) {
-          if (mode == 0) {
-            c.setCount(c.getCount() + 1);
-            found = true;
-            break;
-          }
-          if (c.getCity().equalsIgnoreCase(city)) {
-            if (mode == 1) {
-              c.setCount(c.getCount() + 1);
-              found = true;
-              break;
-            }
-            if (c.getPostal().equalsIgnoreCase(postal)) {
-              c.setCount(c.getCount() + 1);
-              found = true;
-              break;
-            }
-          }
+      List<String> original = Arrays.asList(rs.getString("comment").split("\\s+"));
+      Set<String> temp = new HashSet<>(original);
+      List<String> words = new ArrayList<>(temp);
+
+      if (words == null || words.isEmpty()) {
+        continue;
+      }
+
+      Collections.sort(words, new Comparator<String>() {
+        @Override
+        public int compare(String w1, String w2) {
+          int f1 = Collections.frequency(original, w1);
+          int f2 = Collections.frequency(original, w2);
+          if (f1 > f2)
+            return -1;
+          if (f1 == f2)
+            return 0;
+          return 1;
         }
+      });
+
+      System.out.println("For listing with id: " + rs.getInt("listing_id"));
+      System.out.println("Word: [frequency]");
+      for (String word : words) {
+        System.out.println(word + ": " + Collections.frequency(original, word));
       }
-      if (!found) {
-        if (mode == 0)
-          countries.add(new CCPcounter(country));
-        if (mode == 1)
-          countries.add(new CCPcounter(country, city));
-        if (mode == 2)
-          countries.add(new CCPcounter(country, city, postal));
+      System.out.println();
+    }
+
+  }
+
+  public static void reportLargestCancellationsInYear(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.print("Enter the year (YYYY): ");
+    String year = scanner.next();
+    scanner.nextLine();
+
+    try {
+      LocalDate.parse(year + "-01-01", DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    } catch (DateTimeParseException e) {
+      System.out.println("Wrong date format! Correct format is YYYY!");
+      return;
+    }
+
+    ResultSet rs = SqlDAO.getInstance().rankHostByCancellations(year);
+    int temp = 0;
+    int highest = 0;
+    System.out.println("Hosts: ");
+    while (rs.next()) {
+      temp = rs.getInt("count");
+      if (temp >= highest) {
+        highest = temp;
+        System.out.println(rs.getString("canceller_sin") + ", " + temp);
+      } else {
+        break;
       }
     }
 
-    for (CCPcounter c : countries) {
-      System.out.println(c);
+    rs = SqlDAO.getInstance().rankRenterByCancellations(year);
+    temp = 0;
+    highest = 0;
+    System.out.println("\nRenters: ");
+
+    while (rs.next()) {
+      temp = rs.getInt("count");
+      if (temp >= highest) {
+        highest = temp;
+        System.out.println(rs.getString("canceller_sin") + ", " + temp);
+      } else {
+        break;
+      }
     }
   }
-}
 
-class CCPcounter {
-  private String country, city, postal;
-  private int count;
+  public static void reportRankRenterByBookingInDateRangeAndCity(Scanner scanner)
+      throws ClassNotFoundException, SQLException {
+    System.out.print("Enter the starting date of the range (YYYY-MM-DD): ");
+    String start = scanner.next();
+    System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
+    String end = scanner.next();
+    scanner.nextLine();
 
-  public CCPcounter(String country, String city, String postal) {
-    this.country = country;
-    this.city = city;
-    this.postal = postal;
-    this.count = 1;
+    try {
+      LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+      LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    } catch (DateTimeParseException e) {
+      System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
+    }
+
+    ResultSet rs = SqlDAO.getInstance().rankRenterByBookingInDateRangeAndCity(start, end, start.substring(0, 4));
+
+    while (rs.next()) {
+      System.out.println(rs.getString("sin") + ", " + rs.getString("city") + ", " + rs.getInt("count"));
+    }
   }
 
-  public CCPcounter(String country, String city) {
-    this.country = country;
-    this.city = city;
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportRankRenterByBookings(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.print("Enter the starting date of the range (YYYY-MM-DD): ");
+    String start = scanner.next();
+    System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
+    String end = scanner.next();
+    scanner.nextLine();
+
+    try {
+      LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+      LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    } catch (DateTimeParseException e) {
+      System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
+    }
+
+    ResultSet rs = SqlDAO.getInstance().rankRenterByBookingInDateRange(start, end);
+
+    while (rs.next()) {
+      System.out.println(rs.getString("sin") + ", " + rs.getInt("count"));
+    }
   }
 
-  public CCPcounter(String country) {
-    this.country = country;
-    this.city = "NULL";
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportDateRangeByCityAndPostal(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.print("Enter the starting date of the range (YYYY-MM-DD): ");
+    String start = scanner.next();
+    System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
+    String end = scanner.next();
+    scanner.nextLine();
+    System.out.print("Enter city: ");
+    String city = scanner.nextLine();
+
+    try {
+      LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+      LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    } catch (DateTimeParseException e) {
+      System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
+    }
+
+    ResultSet rs = SqlDAO.getInstance().countBookingInDateRangeByPostal(start, end, city);
+
+    System.out.println("Postal code: [total bookings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("postal_code") + ": " + rs.getInt("count"));
+    }
   }
 
-  public CCPcounter() {
-    this.country = "NULL";
-    this.city = "NULL";
-    this.postal = "NULL";
-    this.count = 1;
+  public static void reportDateRangeByCity(Scanner scanner) throws ClassNotFoundException, SQLException {
+    System.out.print("Enter the starting date of the range (YYYY-MM-DD): ");
+    String start = scanner.next();
+    System.out.print("Enter the end date of the range (YYYY-MM-DD): ");
+    String end = scanner.next();
+    scanner.nextLine();
+
+    try {
+      LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+      LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    } catch (DateTimeParseException e) {
+      System.out.println("Wrong date format! Correct format is YYYY-MM-DD!");
+    }
+
+    ResultSet rs = SqlDAO.getInstance().countBookingInDateRangeByCity(start, end);
+
+    System.out.println("City: [total bookings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("city") + ": " + rs.getInt("count"));
+    }
   }
 
-  public String getCountry() {
-    return country;
+  public static void reportMorethan10percent() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().morethan10percent();
+    System.out.println("Sin, country, city");
+    while (rs.next()) {
+      System.out.println(rs.getString("sin") + ", " + rs.getString("country") + ", " + rs.getString("city"));
+    }
   }
 
-  public void setCountry(String country) {
-    this.country = country;
+  public static void reportRankHostByListingCountryCity() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingByHostAndCities();
+    System.out.println("Country, city, sin: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ", "
+          + rs.getString("sin") + ": " + rs.getInt("count"));
+    }
   }
 
-  public String getCity() {
-    return city;
+  public static void reportRankHostsByListingCountry() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingByHostAndCountry();
+    System.out.println("Country, sin: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("sin") + ": " + rs.getInt("count"));
+    }
   }
 
-  public void setCity(String city) {
-    this.city = city;
+  public static void reportTotalListingByCCP() throws ClassNotFoundException, SQLException {
+    ResultSet rs = SqlDAO.getInstance().countListingInPostals();
+    System.out.println("Country, city, postal: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ", " + rs.getString("postal_code")
+          + ": " + rs.getInt("count"));
+    }
   }
 
-  public String getPostal() {
-    return postal;
+  public static void reportTotalListingByCountryCity() throws SQLException, ClassNotFoundException {
+    ResultSet rs = SqlDAO.getInstance().countListingInCities();
+    System.out.println("Country, city: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ", " + rs.getString("city") + ": " + rs.getInt("count"));
+    }
   }
 
-  public void setPostal(String postal) {
-    this.postal = postal;
-  }
-
-  public int getCount() {
-    return count;
-  }
-
-  public void setCount(int count) {
-    this.count = count;
-  }
-
-  @Override
-  public String toString() {
-    if (city.equals("NULL") && postal.equals("NULL"))
-      return "[" + country + ", " + count + "]";
-    if (postal.equals("NULL"))
-      return "[" + country + ", " + city + ", " + count + "]";
-    return "[" + country + ", " + city + ", " + postal + ", " + count + "]";
+  public static void reportTotalListingByCountry()
+      throws SQLException, ClassNotFoundException {
+    ResultSet rs = SqlDAO.getInstance().countListingInCountries();
+    System.out.println("Country: [total listings]");
+    while (rs.next()) {
+      System.out.println(rs.getString("country") + ": " + rs.getInt("count"));
+    }
   }
 }
