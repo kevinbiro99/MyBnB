@@ -35,10 +35,10 @@ drop table if exists cancelled;
 CREATE TABLE Cancelled (cancel_id INTEGER PRIMARY KEY AUTO_INCREMENT, canceller_sin INTEGER NOT NULL, sin INTEGER NOT NULL, host_sin INTEGER NOT NULL, listing_id INTEGER NOT NULL, start DATE NOT NULL, end DATE NOT NULL, card BIGINT NOT NULL);
 
 drop table if exists user_review;
-CREATE TABLE User_Review (user_sin INTEGER NOT NULL, poster_sin INTEGER NOT NULL, comment VARCHAR(255), rating INTEGER CHECK (rating >= 1 AND rating <= 5));
+CREATE TABLE User_Review (user_sin INTEGER NOT NULL, poster_sin INTEGER NOT NULL, comment VARCHAR(1000), rating INTEGER CHECK (rating >= 1 AND rating <= 5));
 
 drop table if exists listing_review;
-CREATE TABLE Listing_Review (listing_id INTEGER NOT NULL, poster_sin INTEGER NOT NULL, comment VARCHAR(255), rating INTEGER CHECK (rating >= 1 AND rating <= 5));
+CREATE TABLE Listing_Review (listing_id INTEGER NOT NULL, poster_sin INTEGER NOT NULL, comment VARCHAR(1000), rating INTEGER CHECK (rating >= 1 AND rating <= 5));
 
 -- Populate users table with data
 INSERT INTO Users (sin,name,postalcode,city,country,dob,occupation) VALUES ('12345','John Smith','DEF 456','Toronto','Canada','1989-02-23','Locksmith');
