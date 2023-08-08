@@ -596,8 +596,8 @@ public class SqlDAO {
   public ResultSet rankRenterByCancellations(String year) throws SQLException {
     String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = sin AND (start LIKE ? OR end LIKE ?) GROUP BY canceller_sin ORDER BY count DESC";
     PreparedStatement pstmt = conn.prepareStatement(query);
-    pstmt.setString(1, year);
-    pstmt.setString(2, year);
+    pstmt.setString(1, year+"%");
+    pstmt.setString(2, year+"%");
     return pstmt.executeQuery();
   }
 
