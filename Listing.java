@@ -375,6 +375,8 @@ public class Listing {
     if (listings == null)
       return null;
     HashSet<String> amenities = new HashSet<String>(); // no duplicates
+    HashSet<String> hasAmenities;
+    ArrayList<ListingObject> filtered = new ArrayList<ListingObject>();
     int index = 0;
     while (true) {
       System.out.println("Select amenities from the list below for your listing: (exit: e) ");
@@ -404,7 +406,18 @@ public class Listing {
       }
       System.out.println("\n");
     }
-    return null;
+
+    ResultSet rs;
+    for (ListingObject listing : listings) {
+      rs = SqlDAO.getInstance().getListingAmenities(listing.getId());
+      hasAmenities = new HashSet<>();
+      while (rs.next()) {
+        hasAmenities.add(rs.getString("amenity").toLowerCase());
+      }
+      if (hasAmenities.containsAll(amenities))
+        filtered.add(listing);
+    }
+    return filtered;
   }
 
   public static ArrayList<ListingObject> filterByAvailability(Scanner scanner, ArrayList<ListingObject> listings)
@@ -708,10 +721,8 @@ public class Listing {
   }
 
   /*
-   * Asks the user for postal code using scanner, then filters listings by FSA
-   * code
-   * 
-   * Idk how postal works in other countries, this prob only works for canada
+   * Asks the user for postal code and country using scanner, then filters
+   * listings by the inputs
    */
   public static ArrayList<ListingObject> filterByPostal(Scanner scanner, ArrayList<ListingObject> listings)
       throws SQLException, ClassNotFoundException {

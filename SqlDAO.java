@@ -578,8 +578,8 @@ public class SqlDAO {
         + filterBookingAttributes
         + ") as b NATURAL JOIN listings as c) WHERE a.occurences > 1 GROUP BY sin, city ORDER BY count DESC";
     PreparedStatement pstmt = conn.prepareStatement(query);
-    pstmt.setString(1, year);
-    pstmt.setString(2, year);
+    pstmt.setString(1, year+"%");
+    pstmt.setString(2, year+"%");
     pstmt.setString(3, start);
     pstmt.setString(4, end);
     return pstmt.executeQuery();
@@ -588,8 +588,8 @@ public class SqlDAO {
   public ResultSet rankHostByCancellations(String year) throws SQLException {
     String query = "SELECT canceller_sin, count(*) as count FROM cancelled WHERE canceller_sin = host_sin AND (start LIKE ? OR end LIKE ?) GROUP BY canceller_sin ORDER BY count DESC";
     PreparedStatement pstmt = conn.prepareStatement(query);
-    pstmt.setString(1, year);
-    pstmt.setString(2, year);
+    pstmt.setString(1, year+"%");
+    pstmt.setString(2, year+"%");
     return pstmt.executeQuery();
   }
 
