@@ -202,12 +202,10 @@ public class User {
             }
         }
         
-        ResultSet rs = SqlDAO.getInstance().getBookingsFromHost(sin);
+        ResultSet rs = SqlDAO.getInstance().getBookings(sin);
 
         System.out.println("Bookings made by the user " + sin + ": ");
         ArrayList<Integer> bookings = new ArrayList<Integer>();
-
-        boolean diffUsr = false;
 
         // Extract data from result set
         while(rs.next()){
@@ -219,10 +217,37 @@ public class User {
             long card = rs.getLong("card");
             int booking_sin = rs.getInt("sin");
             boolean complete = rs.getBoolean("complete");
+        
+            if (!complete) bookings.add(booking_id);
 
-            if (!diffUsr && booking_sin != sin) {
-                System.out.println("\nBookings made on your listings: ");
-                diffUsr = true;
+            //Display values
+            System.out.print("booking_id: " + booking_id + ", (listing_id: " + listing_id);
+            System.out.print(", start: " + start);
+            System.out.print(", end: " + end);
+            System.out.print(", booking_sin: " + booking_sin);
+            System.out.print(", complete: " + complete);
+            System.out.println(", card: " + card + ")");
+        }
+
+        rs.close();
+
+        rs = SqlDAO.getInstance().getBookingsFromHost(sin);
+
+
+        System.out.println("\nBookings made on your listings: ");
+        // Extract data from result set
+        while(rs.next()){
+            //Retrieve by column name
+            int booking_id = rs.getInt("booking_id");
+            int listing_id  = rs.getInt("listing_id");
+            Date start = rs.getDate("start");
+            Date end = rs.getDate("end");
+            long card = rs.getLong("card");
+            int booking_sin = rs.getInt("sin");
+            boolean complete = rs.getBoolean("complete");
+
+            if (booking_sin == sin) {
+                continue;
             }
         
             if (!complete) bookings.add(booking_id);
